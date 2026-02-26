@@ -18,13 +18,14 @@
 /* Glass card utility */
 .glass-card {
   background: rgba(17, 24, 39, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(31, 41, 55, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(31, 41, 55, 0.5);
 }
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+  background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #EC4899 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -41,6 +42,10 @@
   box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   margin: 0;
   background: #0B1120;
@@ -49,6 +54,25 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+}
+
+/* Ambient background mesh gradient */
+#root {
+  position: relative;
+}
+#root::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(ellipse 600px 600px at 20% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 500px at 80% 80%, rgba(139, 92, 246, 0.03) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 400px at 50% 50%, rgba(236, 72, 153, 0.02) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* Animated gradient border */
@@ -61,7 +85,7 @@ body {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+  background: linear-gradient(135deg, #3B82F6, #8B5CF6, #EC4899);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -70,22 +94,72 @@ body {
 
 /* Pulse animation for score rings */
 @keyframes pulse-glow {
-  0%, 100% { filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.3)); }
-  50% { filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.6)); }
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.25)); }
+  50% { filter: drop-shadow(0 0 14px rgba(59, 130, 246, 0.5)); }
 }
 .pulse-glow {
   animation: pulse-glow 3s ease-in-out infinite;
 }
 
+/* Premium shimmer effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
 /* Recharts customization */
 .recharts-default-tooltip {
-  background: #111827 !important;
-  border: 1px solid #1F2937 !important;
-  border-radius: 8px !important;
+  background: rgba(17, 24, 39, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(31, 41, 55, 0.6) !important;
+  border-radius: 12px !important;
+  font-size: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
 }
 .recharts-tooltip-label {
   color: #E5E7EB !important;
+  font-weight: 600 !important;
 }
 .recharts-tooltip-item {
   color: #9CA3AF !important;
+}
+
+/* Selection */
+::selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: #E5E7EB;
+}
+
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Range slider thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+  border: 2px solid #0B1120;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+  border: 2px solid #0B1120;
 }

@@ -21,7 +21,9 @@ const navItems = [
 
 export function Sidebar() {
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-[260px] bg-[#0B1120]/95 backdrop-blur-xl border-r border-[#1F2937]/50 z-50 flex flex-col">
+    <aside className="fixed left-0 top-0 bottom-0 w-[260px] bg-[#0B1120]/98 backdrop-blur-2xl border-r border-[#1F2937]/40 z-50 flex flex-col">
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#3B82F6]/[0.02] via-transparent to-[#8B5CF6]/[0.02] pointer-events-none" />
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 h-20 border-b border-[#1F2937]/50">
         <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-[#3B82F6] to-[#8B5CF6] shadow-lg shadow-[#3B82F6]/20">

@@ -15,7 +15,8 @@ export function Navbar() {
   const pageInfo = pageTitles[location.pathname] || { title: 'PrepIQ', subtitle: '' };
 
   return (
-    <header className="sticky top-0 z-40 h-20 bg-[#0B1120]/80 backdrop-blur-xl border-b border-[#1F2937]/50">
+    <header className="sticky top-0 z-40 h-20 bg-[#0B1120]/70 backdrop-blur-2xl border-b border-[#1F2937]/30">
+      <div className="absolute inset-0 bg-gradient-to-r from-[#3B82F6]/[0.01] to-[#8B5CF6]/[0.01] pointer-events-none" />
       <div className="flex items-center justify-between h-full px-8">
         {/* Left side - Page title */}
         <motion.div
