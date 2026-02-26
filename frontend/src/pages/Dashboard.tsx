@@ -36,6 +36,7 @@ export default function Dashboard() {
   );
 
   // Random AI insight
+  // eslint-disable-next-line react-hooks/purity
   const insight = useMemo(() => aiInsights[Math.floor(Math.random() * aiInsights.length)], []);
 
   const weakTopics = weaknessData.filter(w => w.classification === 'Weak');
