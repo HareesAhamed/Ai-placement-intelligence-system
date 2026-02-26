@@ -4,7 +4,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area,
 } from 'recharts';
-import { Brain, TrendingUp, AlertTriangle, Sparkles, ArrowUpRight, Activity } from 'lucide-react';
+import { Timer, Percent, ShieldAlert, Crown, MoveUpRight, Hash } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import { Card } from '../components/ui/Card';
@@ -68,10 +68,10 @@ export default function Dashboard() {
       {/* Top Stats Row */}
       <motion.div variants={staggerItem} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {[
-          { label: 'Problems Solved', value: totalSolved, sub: `of ${totalAttempts} attempted`, icon: Activity, color: '#3B82F6', change: '+12%' },
-          { label: 'Accuracy Rate', value: `${Math.round((totalSolved / totalAttempts) * 100)}%`, sub: 'overall', icon: TrendingUp, color: '#10B981', change: '+5%' },
-          { label: 'Weak Areas', value: weakTopics.length, sub: 'topics need focus', icon: AlertTriangle, color: '#EF4444', change: '-2' },
-          { label: 'Avg. Time', value: `${Math.round(userPerformance.reduce((a, b) => a + b.avgTime, 0) / userPerformance.length)}m`, sub: 'per problem', icon: Brain, color: '#8B5CF6', change: '-3m' },
+          { label: 'Problems Solved', value: totalSolved, sub: `of ${totalAttempts} attempted`, icon: Hash, color: '#6366F1', change: '+12%' },
+          { label: 'Accuracy Rate', value: `${Math.round((totalSolved / totalAttempts) * 100)}%`, sub: 'overall', icon: Percent, color: '#10B981', change: '+5%' },
+          { label: 'Weak Areas', value: weakTopics.length, sub: 'topics need focus', icon: ShieldAlert, color: '#F43F5E', change: '-2' },
+          { label: 'Avg. Time', value: `${Math.round(userPerformance.reduce((a, b) => a + b.avgTime, 0) / userPerformance.length)}m`, sub: 'per problem', icon: Timer, color: '#06B6D4', change: '-3m' },
         ].map((stat) => (
           <Card key={stat.label} className="!p-5" glow="blue">
             <div className="flex items-start justify-between">
@@ -88,7 +88,7 @@ export default function Dashboard() {
                   <stat.icon className="w-4.5 h-4.5" style={{ color: stat.color }} />
                 </div>
                 <span className="flex items-center gap-0.5 text-xs font-medium text-[#10B981]">
-                  <ArrowUpRight className="w-3 h-3" />
+                  <MoveUpRight className="w-3 h-3" />
                   {stat.change}
                 </span>
               </div>
@@ -111,7 +111,7 @@ export default function Dashboard() {
           {/* Company Readiness */}
           <Card hover={false}>
             <h3 className="text-sm font-semibold text-[#E5E7EB] mb-4 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#8B5CF6]" />
+              <Crown className="w-4 h-4 text-[#F59E0B]" />
               Company Readiness
             </h3>
             <div className="space-y-4">
@@ -185,9 +185,9 @@ export default function Dashboard() {
         {/* Right Column */}
         <motion.div variants={staggerItem} className="lg:col-span-3 space-y-6">
           {/* AI Insight */}
-          <Card className="!bg-gradient-to-br !from-[#3B82F6]/10 !to-[#8B5CF6]/10 !border-[#3B82F6]/20" hover={false}>
+          <Card className="!bg-gradient-to-br !from-[#6366F1]/10 !to-[#06B6D4]/10 !border-[#6366F1]/20" hover={false}>
             <div className="flex items-center gap-2 mb-3">
-              <Brain className="w-4 h-4 text-[#3B82F6]" />
+              <Crown className="w-4 h-4 text-[#06B6D4]" />
               <h3 className="text-sm font-semibold text-[#E5E7EB]">AI Insight</h3>
             </div>
             <p className="text-sm text-[#9CA3AF] leading-relaxed">{insight}</p>

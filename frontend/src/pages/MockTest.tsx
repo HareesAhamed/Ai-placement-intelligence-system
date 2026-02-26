@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, Play, RotateCcw, Sparkles, Clock, CheckCircle, TrendingUp, Zap } from 'lucide-react';
+import { Crosshair, PlayCircle, RotateCcw, Wand2, Timer, BadgeCheck, ArrowUpFromLine, Loader } from 'lucide-react';
 
 import { Card } from '../components/ui/Card';
 import { ScoreRing } from '../components/ui/ScoreRing';
@@ -147,15 +147,15 @@ export default function MockTest() {
                   <p className="text-xs text-[#9CA3AF] mt-1 line-clamp-2">{test.description}</p>
                   <div className="flex items-center gap-2 mt-3">
                     <div className="flex items-center gap-1 text-xs text-[#9CA3AF]">
-                      <Clock className="w-3 h-3" /> 30-60 min
+                      <Timer className="w-3 h-3" /> 30-60 min
                     </div>
                     <div className="flex items-center gap-1 text-xs text-[#9CA3AF]">
-                      <Target className="w-3 h-3" /> 10 Qs
+                      <Crosshair className="w-3 h-3" /> 10 Qs
                     </div>
                   </div>
                 </div>
-                <div className="shrink-0 p-2 rounded-lg bg-[#3B82F6]/10 group-hover:bg-[#3B82F6]/20 transition-colors">
-                  <Play className="w-4 h-4 text-[#3B82F6]" />
+                <div className="shrink-0 p-2 rounded-lg bg-[#6366F1]/10 group-hover:bg-[#6366F1]/20 transition-colors">
+                  <PlayCircle className="w-4 h-4 text-[#6366F1]" />
                 </div>
               </div>
             </Card>
@@ -170,7 +170,7 @@ export default function MockTest() {
       <SectionHeader
         title="Mock Tests"
         subtitle="Simulate real interview assessments and track performance"
-        icon={<Target className="w-5 h-5 text-[#3B82F6]" />}
+        icon={<Crosshair className="w-5 h-5 text-[#6366F1]" />}
         action={
           result && (
             <button
@@ -198,7 +198,7 @@ export default function MockTest() {
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                className="w-16 h-16 mx-auto mb-6 rounded-full border-[3px] border-[#1F2937] border-t-[#3B82F6]"
+                className="w-16 h-16 mx-auto mb-6 rounded-full border-[3px] border-[#1F2937] border-t-[#6366F1]"
               />
               <h3 className="text-lg font-bold text-[#E5E7EB] mb-2">
                 {activeTest?.name} Test in Progress
@@ -207,7 +207,7 @@ export default function MockTest() {
                 AI is generating and evaluating your assessment...
               </p>
               <div className="flex items-center justify-center gap-2 text-[#3B82F6]">
-                <Zap className="w-4 h-4" />
+                <Loader className="w-4 h-4" />
                 <span className="text-sm font-mono">{(timer / 10).toFixed(1)}s</span>
               </div>
             </Card>
@@ -263,7 +263,7 @@ export default function MockTest() {
                   className="!bg-gradient-to-br !from-[#3B82F6]/8 !to-[#8B5CF6]/8 !border-[#3B82F6]/20"
                 >
                   <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="w-4 h-4 text-[#8B5CF6]" />
+                    <Wand2 className="w-4 h-4 text-[#06B6D4]" />
                     <h4 className="text-sm font-semibold text-[#E5E7EB]">AI Performance Analysis</h4>
                   </div>
                   <p className="text-sm text-[#9CA3AF] leading-relaxed">
@@ -275,13 +275,13 @@ export default function MockTest() {
                 <div className="grid grid-cols-2 gap-4">
                   <Card hover={false}>
                     <h4 className="text-sm font-semibold text-[#10B981] mb-3 flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4" />
+                      <ArrowUpFromLine className="w-4 h-4" />
                       Strengths
                     </h4>
                     <div className="space-y-2">
                       {result.strengths.map((s) => (
                         <div key={s} className="flex items-center gap-2">
-                          <CheckCircle className="w-3.5 h-3.5 text-[#10B981]" />
+                          <BadgeCheck className="w-3.5 h-3.5 text-[#10B981]" />
                           <span className="text-sm text-[#E5E7EB]">{s}</span>
                         </div>
                       ))}
@@ -289,7 +289,7 @@ export default function MockTest() {
                   </Card>
                   <Card hover={false}>
                     <h4 className="text-sm font-semibold text-[#EF4444] mb-3 flex items-center gap-2">
-                      <Target className="w-4 h-4" />
+                      <Crosshair className="w-4 h-4" />
                       Areas to Improve
                     </h4>
                     <div className="space-y-2">
@@ -316,14 +316,14 @@ export default function MockTest() {
             exit={{ opacity: 0 }}
             className="space-y-8"
           >
-            {renderTestGrid(patternTests, 'Pattern-wise Tests', <Zap className="w-4 h-4 text-[#F59E0B]" />)}
-            {renderTestGrid(companyTests, 'Company-wise Tests', <Target className="w-4 h-4 text-[#8B5CF6]" />)}
+            {renderTestGrid(patternTests, 'Pattern-wise Tests', <Loader className="w-4 h-4 text-[#F59E0B]" />)}
+            {renderTestGrid(companyTests, 'Company-wise Tests', <Crosshair className="w-4 h-4 text-[#6366F1]" />)}
 
             {/* Recent History */}
             {history.length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold text-[#E5E7EB] mb-4 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-[#9CA3AF]" />
+                  <Timer className="w-4 h-4 text-[#9CA3AF]" />
                   Recent Results
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

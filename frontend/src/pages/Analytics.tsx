@@ -3,7 +3,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
-import { BarChart3, TrendingDown, Building2, Grid3X3 } from 'lucide-react';
+import { Activity, ArrowDownToDot, Landmark, LayoutGrid } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import { Card } from '../components/ui/Card';
@@ -18,10 +18,10 @@ const CHART_COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#E
 
 const intensityColors = [
   'bg-[#1F2937]/30',
-  'bg-[#3B82F6]/20',
-  'bg-[#3B82F6]/40',
-  'bg-[#3B82F6]/60',
-  'bg-[#3B82F6]/80',
+  'bg-[#6366F1]/20',
+  'bg-[#6366F1]/40',
+  'bg-[#6366F1]/60',
+  'bg-[#6366F1]/80',
 ];
 
 export default function Analytics() {
@@ -69,13 +69,13 @@ export default function Analytics() {
       <SectionHeader
         title="Performance Analytics"
         subtitle="Deep dive into your placement preparation metrics"
-        icon={<BarChart3 className="w-5 h-5 text-[#3B82F6]" />}
+        icon={<Activity className="w-5 h-5 text-[#6366F1]" />}
       />
 
       {/* Company-wise Donut Charts */}
       <div>
         <h3 className="text-sm font-semibold text-[#E5E7EB] mb-4 flex items-center gap-2">
-          <Building2 className="w-4 h-4 text-[#8B5CF6]" />
+          <Landmark className="w-4 h-4 text-[#6366F1]" />
           Company-wise Topic Distribution
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -135,7 +135,7 @@ export default function Analytics() {
         <div className="lg:col-span-8">
           <Card hover={false}>
             <h3 className="text-sm font-semibold text-[#E5E7EB] mb-4 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-[#3B82F6]" />
+              <Activity className="w-4 h-4 text-[#06B6D4]" />
               Pattern-wise Performance
             </h3>
             <ResponsiveContainer width="100%" height={350}>
@@ -164,7 +164,7 @@ export default function Analytics() {
         <div className="lg:col-span-4">
           <Card hover={false}>
             <h3 className="text-sm font-semibold text-[#E5E7EB] mb-4 flex items-center gap-2">
-              <TrendingDown className="w-4 h-4 text-[#EF4444]" />
+              <ArrowDownToDot className="w-4 h-4 text-[#F43F5E]" />
               Weakness Ranking
             </h3>
             <div className="space-y-3">
@@ -201,7 +201,7 @@ export default function Analytics() {
       {/* Heatmap */}
       <Card hover={false}>
         <h3 className="text-sm font-semibold text-[#E5E7EB] mb-5 flex items-center gap-2">
-          <Grid3X3 className="w-4 h-4 text-[#10B981]" />
+          <LayoutGrid className="w-4 h-4 text-[#10B981]" />
           Topic Consistency Heatmap
           <span className="text-xs text-[#9CA3AF] font-normal ml-2">Last 4 weeks</span>
         </h3>

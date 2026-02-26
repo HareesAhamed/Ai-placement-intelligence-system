@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom';
-import { Bell, Search, Zap } from 'lucide-react';
+import { BellDot, Search, Flame } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
@@ -45,15 +45,15 @@ export function Navbar() {
           </div>
 
           {/* Streak indicator */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/20">
-            <Zap className="w-3.5 h-3.5 text-[#F59E0B]" />
-            <span className="text-xs font-semibold text-[#F59E0B]">7 day streak</span>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F97316]/10 border border-[#F97316]/20">
+            <Flame className="w-3.5 h-3.5 text-[#F97316]" />
+            <span className="text-xs font-semibold text-[#F97316]">7 day streak</span>
           </div>
 
           {/* Notification bell */}
           <button className="relative p-2.5 rounded-xl bg-[#111827]/60 border border-[#1F2937]/40 hover:bg-[#1F2937]/60 transition-colors">
-            <Bell className="w-4 h-4 text-[#9CA3AF]" />
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#3B82F6] border-2 border-[#0B1120]" />
+            <BellDot className="w-4 h-4 text-[#9CA3AF]" />
+            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#6366F1] border-2 border-[#0B1120]" />
           </button>
         </div>
       </div>

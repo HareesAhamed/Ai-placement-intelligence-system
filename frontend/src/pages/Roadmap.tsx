@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Map, CheckCircle2, Circle, Brain, Trophy, Target } from 'lucide-react';
+import { Route, CircleCheckBig, CircleDashed, Briefcase, Medal, Layers } from 'lucide-react';
 
 import { Card } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
@@ -58,12 +58,12 @@ export default function Roadmap() {
       <SectionHeader
         title="AI Study Roadmap"
         subtitle="30-day personalized plan based on your weakness analysis"
-        icon={<Map className="w-5 h-5 text-[#3B82F6]" />}
+        icon={<Route className="w-5 h-5 text-[#6366F1]" />}
         action={
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#3B82F6]/10 border border-[#3B82F6]/20">
-              <Trophy className="w-4 h-4 text-[#3B82F6]" />
-              <span className="text-sm font-semibold text-[#3B82F6]">{progress}% Complete</span>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#6366F1]/10 border border-[#6366F1]/20">
+              <Medal className="w-4 h-4 text-[#6366F1]" />
+              <span className="text-sm font-semibold text-[#6366F1]">{progress}% Complete</span>
             </div>
           </div>
         }
@@ -85,7 +85,7 @@ export default function Roadmap() {
           {/* Topic Progress */}
           <Card hover={false}>
             <h3 className="text-sm font-semibold text-[#E5E7EB] mb-4 flex items-center gap-2">
-              <Target className="w-4 h-4 text-[#8B5CF6]" />
+              <Layers className="w-4 h-4 text-[#6366F1]" />
               Topic-wise Progress
             </h3>
             <div className="space-y-4">
@@ -109,7 +109,7 @@ export default function Roadmap() {
           {/* Company Readiness Cards */}
           <Card hover={false}>
             <h3 className="text-sm font-semibold text-[#E5E7EB] mb-4 flex items-center gap-2">
-              <Brain className="w-4 h-4 text-[#3B82F6]" />
+              <Briefcase className="w-4 h-4 text-[#F59E0B]" />
               Company Readiness
             </h3>
             <div className="grid grid-cols-2 gap-3">
@@ -140,7 +140,7 @@ export default function Roadmap() {
         <div className="lg:col-span-8">
           <Card hover={false}>
             <h3 className="text-sm font-semibold text-[#E5E7EB] mb-5 flex items-center gap-2">
-              <Map className="w-4 h-4 text-[#3B82F6]" />
+              <Route className="w-4 h-4 text-[#06B6D4]" />
               30-Day Study Plan
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -165,9 +165,9 @@ export default function Roadmap() {
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[10px] font-bold text-[#9CA3AF] uppercase">Day {day.day}</span>
                       {day.completed ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
+                        <CircleCheckBig className="w-3.5 h-3.5 text-[#10B981]" />
                       ) : (
-                        <Circle className="w-3.5 h-3.5 text-[#9CA3AF]/30" />
+                        <CircleDashed className="w-3.5 h-3.5 text-[#9CA3AF]/30" />
                       )}
                     </div>
                     <p className="text-xs font-medium truncate" style={{ color }}>

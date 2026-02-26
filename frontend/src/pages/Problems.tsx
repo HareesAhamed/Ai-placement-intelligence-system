@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Clock, BarChart2, CheckCircle2, XCircle, Sparkles, Send } from 'lucide-react';
+import { Search, Timer, BookOpenCheck, CircleCheckBig, CircleDashed, Wand2, Rocket } from 'lucide-react';
 
 import { Card } from '../components/ui/Card';
 import { TopicBadge } from '../components/ui/TopicBadge';
@@ -104,13 +104,13 @@ export default function Problems() {
       <SectionHeader
         title="Problem Tracker"
         subtitle={`${stats.solved} of ${stats.total} problems solved`}
-        icon={<BarChart2 className="w-5 h-5 text-[#3B82F6]" />}
+        icon={<BookOpenCheck className="w-5 h-5 text-[#6366F1]" />}
       />
 
       {/* Stats chips */}
       <div className="flex gap-3 flex-wrap">
         {[
-          { label: 'Total', count: stats.total, color: '#3B82F6' },
+          { label: 'Total', count: stats.total, color: '#6366F1' },
           { label: 'Solved', count: stats.solved, color: '#10B981' },
           { label: 'Easy', count: stats.easy, color: '#10B981' },
           { label: 'Medium', count: stats.medium, color: '#F59E0B' },
@@ -194,9 +194,9 @@ export default function Problems() {
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {problem.solved ? (
-                        <CheckCircle2 className="w-4 h-4 text-[#10B981] shrink-0" />
+                        <CircleCheckBig className="w-4 h-4 text-[#10B981] shrink-0" />
                       ) : (
-                        <XCircle className="w-4 h-4 text-[#9CA3AF]/40 shrink-0" />
+                        <CircleDashed className="w-4 h-4 text-[#9CA3AF]/40 shrink-0" />
                       )}
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-[#E5E7EB] truncate">{problem.title}</p>
@@ -241,7 +241,7 @@ export default function Problems() {
                 {/* Tracking Section */}
                 <div className="space-y-5 pt-4 border-t border-[#1F2937]/50">
                   <h4 className="text-sm font-semibold text-[#E5E7EB] flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-[#8B5CF6]" />
+                    <Timer className="w-4 h-4 text-[#06B6D4]" />
                     Track Your Attempt
                   </h4>
 
@@ -299,7 +299,7 @@ export default function Problems() {
                     disabled={!timeTaken}
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm text-white bg-gradient-to-r from-[#3B82F6] to-[#8B5CF6] hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg shadow-[#3B82F6]/20"
                   >
-                    <Send className="w-4 h-4" />
+                    <Rocket className="w-4 h-4" />
                     Save & Analyze
                   </button>
                 </div>
@@ -319,7 +319,7 @@ export default function Problems() {
                       className="!bg-gradient-to-br !from-[#3B82F6]/8 !to-[#8B5CF6]/8 !border-[#3B82F6]/20"
                     >
                       <div className="flex items-center gap-2 mb-3">
-                        <Sparkles className="w-4 h-4 text-[#8B5CF6]" />
+                        <Wand2 className="w-4 h-4 text-[#06B6D4]" />
                         <h4 className="text-sm font-semibold text-[#E5E7EB]">AI Performance Feedback</h4>
                       </div>
                       <div className="space-y-2">
@@ -335,8 +335,8 @@ export default function Problems() {
           ) : (
             <Card hover={false} className="!flex !items-center !justify-center !min-h-[400px]">
               <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#3B82F6]/10 flex items-center justify-center">
-                  <BarChart2 className="w-8 h-8 text-[#3B82F6]/40" />
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#6366F1]/10 flex items-center justify-center">
+                  <BookOpenCheck className="w-8 h-8 text-[#6366F1]/40" />
                 </div>
                 <p className="text-sm text-[#9CA3AF]">Select a problem to view details</p>
                 <p className="text-xs text-[#9CA3AF]/60 mt-1">Track your progress and get AI feedback</p>
