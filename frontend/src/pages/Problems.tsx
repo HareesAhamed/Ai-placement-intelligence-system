@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Timer, BookOpenCheck, CircleCheckBig, CircleDashed, Wand2, Rocket } from 'lucide-react';
+import { Search, Timer, BookOpenCheck, CircleCheckBig, CircleDashed, Wand2, Rocket, PlusSquare } from 'lucide-react';
 
 import { Card } from '../components/ui/Card';
 import { TopicBadge } from '../components/ui/TopicBadge';
@@ -22,10 +22,20 @@ export default function Problems() {
   const [confidence, setConfidence] = useState(3);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [logTitle, setLogTitle] = useState('');
+  const [logTopic, setLogTopic] = useState('Array');
+  const [logDifficulty, setLogDifficulty] = useState<'Easy' | 'Medium' | 'Hard'>('Medium');
+  const [logAttempts, setLogAttempts] = useState('1');
+  const [logTimeTaken, setLogTimeTaken] = useState('');
+  const [logConfidence, setLogConfidence] = useState(3);
 
   const topics = useMemo(() => {
     const t = new Set(problems.map(p => p.topic));
     return ['all', ...Array.from(t)];
+  }, [problems]);
+
+  const topicOptions = useMemo(() => {
+    return Array.from(new Set(problems.map(p => p.topic))).sort((a, b) => a.localeCompare(b));
   }, [problems]);
 
   const filteredProblems = useMemo(() => {
@@ -37,7 +47,7 @@ export default function Problems() {
     });
   }, [problems, search, filter, topicFilter]);
 
-  const generateFeedback = (time: number, problem: Problem): string => {
+  const generateFeedback = (time: number, problem: Problem, confidenceValue: number, attemptsValue: number): string => {
     const avgTime = problems
       .filter(p => p.topic === problem.topic && p.timeTaken)
       .reduce((acc, p) => acc + (p.timeTaken || 0), 0) / Math.max(1, problems.filter(p => p.topic === problem.topic && p.timeTaken).length);
@@ -52,13 +62,13 @@ export default function Problems() {
       messages.push(`✅ Good pace. Your time is consistent with your ${problem.topic} average.`);
     }
 
-    if (confidence <= 2) {
+    if (confidenceValue <= 2) {
       messages.push(`📘 Low confidence detected. Review core ${problem.topic} patterns and attempt similar ${problem.difficulty} problems.`);
-    } else if (confidence >= 4) {
+    } else if (confidenceValue >= 4) {
       messages.push(`💪 High confidence! Consider trying harder ${problem.topic} problems to level up.`);
     }
 
-    if (parseInt(attempts) > 2) {
+    if (attemptsValue > 2) {
       messages.push(`🔄 Multiple attempts suggest this pattern needs reinforcement. Add ${problem.topic} to your daily practice.`);
     }
 
@@ -84,10 +94,55 @@ export default function Problems() {
     setProblems(updatedProblems);
     localStorage.setItem('prepiq_problems', JSON.stringify(updatedProblems));
 
-    const fb = generateFeedback(parseInt(timeTaken), selectedProblem);
+    const fb = generateFeedback(
+      parseInt(timeTaken),
+      selectedProblem,
+      confidence,
+      parseInt(attempts)
+    );
     setFeedback(fb);
     setShowFeedback(true);
     setSelectedProblem(updatedProblem);
+  };
+
+  const handleManualLog = () => {
+    const trimmedTitle = logTitle.trim();
+    const attemptsValue = parseInt(logAttempts);
+    const timeValue = parseInt(logTimeTaken);
+
+    if (!trimmedTitle || !logTopic || Number.isNaN(attemptsValue) || Number.isNaN(timeValue)) return;
+    if (attemptsValue < 1 || timeValue < 1) return;
+
+    const newProblem: Problem = {
+      id: `manual_${Date.now()}`,
+      title: trimmedTitle,
+      topic: logTopic,
+      difficulty: logDifficulty,
+      solved: true,
+      attemptCount: attemptsValue,
+      timeTaken: timeValue,
+      confidence: logConfidence,
+      solvedAt: new Date().toISOString().split('T')[0],
+    };
+
+    const updatedProblems = [newProblem, ...problems];
+    setProblems(updatedProblems);
+    localStorage.setItem('prepiq_problems', JSON.stringify(updatedProblems));
+
+    setSelectedProblem(newProblem);
+    setTimeTaken(String(timeValue));
+    setAttempts(String(attemptsValue));
+    setConfidence(logConfidence);
+
+    const fb = generateFeedback(timeValue, newProblem, logConfidence, attemptsValue);
+    setFeedback(fb);
+    setShowFeedback(true);
+
+    setLogTitle('');
+    setLogDifficulty('Medium');
+    setLogAttempts('1');
+    setLogTimeTaken('');
+    setLogConfidence(3);
   };
 
   const solvedCount = problems.filter(p => p.solved).length;
@@ -129,6 +184,85 @@ export default function Problems() {
           </div>
         ))}
       </div>
+
+      <Card hover={false} className="!p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <PlusSquare className="w-4 h-4 text-[#06B6D4]" />
+          <h3 className="text-sm font-semibold text-[#E5E7EB]">Manual Problem Log</h3>
+          <span className="text-xs text-[#9CA3AF]">Simulate your solved submissions</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
+          <input
+            type="text"
+            value={logTitle}
+            onChange={(e) => setLogTitle(e.target.value)}
+            placeholder="Problem name"
+            className="lg:col-span-2 w-full px-4 py-2.5 rounded-xl bg-[#0B1120] border border-[#1F2937] text-sm text-[#E5E7EB] placeholder-[#9CA3AF]/40 focus:outline-none focus:border-[#3B82F6]/50"
+          />
+          <select
+            value={logTopic}
+            onChange={(e) => setLogTopic(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl bg-[#0B1120] border border-[#1F2937] text-sm text-[#E5E7EB] focus:outline-none focus:border-[#3B82F6]/50"
+          >
+            {topicOptions.map((topic) => (
+              <option key={topic} value={topic}>{topic}</option>
+            ))}
+          </select>
+          <select
+            value={logDifficulty}
+            onChange={(e) => setLogDifficulty(e.target.value as 'Easy' | 'Medium' | 'Hard')}
+            className="w-full px-4 py-2.5 rounded-xl bg-[#0B1120] border border-[#1F2937] text-sm text-[#E5E7EB] focus:outline-none focus:border-[#3B82F6]/50"
+          >
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
+          <input
+            type="number"
+            min="1"
+            value={logAttempts}
+            onChange={(e) => setLogAttempts(e.target.value)}
+            placeholder="Attempts"
+            className="w-full px-4 py-2.5 rounded-xl bg-[#0B1120] border border-[#1F2937] text-sm text-[#E5E7EB] placeholder-[#9CA3AF]/40 focus:outline-none focus:border-[#3B82F6]/50"
+          />
+          <input
+            type="number"
+            min="1"
+            value={logTimeTaken}
+            onChange={(e) => setLogTimeTaken(e.target.value)}
+            placeholder="Time (min)"
+            className="w-full px-4 py-2.5 rounded-xl bg-[#0B1120] border border-[#1F2937] text-sm text-[#E5E7EB] placeholder-[#9CA3AF]/40 focus:outline-none focus:border-[#3B82F6]/50"
+          />
+        </div>
+
+        <div className="mt-4 flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs text-[#9CA3AF]">Confidence</label>
+              <span className="text-xs font-semibold text-[#E5E7EB]">{logConfidence}/5</span>
+            </div>
+            <input
+              type="range"
+              min="1"
+              max="5"
+              value={logConfidence}
+              onChange={(e) => setLogConfidence(parseInt(e.target.value))}
+              className="w-full h-2 rounded-full appearance-none cursor-pointer"
+              style={{
+                background: `linear-gradient(to right, #06B6D4 0%, #3B82F6 ${(logConfidence / 5) * 100}%, #1F2937 ${(logConfidence / 5) * 100}%, #1F2937 100%)`,
+              }}
+            />
+          </div>
+          <button
+            onClick={handleManualLog}
+            disabled={!logTitle.trim() || !logTimeTaken || !logAttempts}
+            className="lg:w-auto w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium text-sm text-white bg-gradient-to-r from-[#06B6D4] to-[#3B82F6] hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          >
+            <PlusSquare className="w-4 h-4" />
+            Log Solved Problem
+          </button>
+        </div>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Panel - Problem List */}

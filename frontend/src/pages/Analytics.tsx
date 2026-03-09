@@ -3,7 +3,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
-import { Activity, ArrowDownToDot, Landmark, LayoutGrid } from 'lucide-react';
+import { Activity, ArrowDownToDot, Landmark, LayoutGrid, Timer } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import { Card } from '../components/ui/Card';
@@ -26,6 +26,27 @@ const intensityColors = [
 
 export default function Analytics() {
   const weaknessData = useMemo(() => analyzeWeaknesses(userPerformance), []);
+
+  const timeSpentData = useMemo(() => {
+    const savedProblems = JSON.parse(localStorage.getItem('prepiq_problems') || 'null') || [];
+    const source = savedProblems.length > 0
+      ? savedProblems.filter((p: { solved: boolean; timeTaken?: number }) => p.solved && p.timeTaken)
+      : userPerformance.map((topic) => ({
+          topic: topic.topic,
+          timeTaken: Math.round((topic.avgTime * topic.attempts) / Math.max(1, topic.solved)),
+          solved: true,
+        }));
+
+    const totals = source.reduce((acc: Record<string, number>, problem: { topic: string; timeTaken: number }) => {
+      acc[problem.topic] = (acc[problem.topic] || 0) + problem.timeTaken;
+      return acc;
+    }, {});
+
+    return Object.entries(totals as Record<string, number>)
+      .map(([topic, minutes]) => ({ topic, minutes: Number(minutes) }))
+      .sort((a, b) => b.minutes - a.minutes)
+      .slice(0, 8);
+  }, []);
 
   // Company donut data
   const companyData = useMemo(() => {
@@ -257,6 +278,37 @@ export default function Analytics() {
             </div>
           </div>
         </div>
+      </Card>
+
+      <Card hover={false}>
+        <h3 className="text-sm font-semibold text-[#E5E7EB] mb-4 flex items-center gap-2">
+          <Timer className="w-4 h-4 text-[#06B6D4]" />
+          Time Spent by Topic
+        </h3>
+        <ResponsiveContainer width="100%" height={280}>
+          <BarChart data={timeSpentData} layout="vertical" margin={{ left: 12, right: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
+            <XAxis
+              type="number"
+              tick={{ fill: '#9CA3AF', fontSize: 11 }}
+              axisLine={{ stroke: '#1F2937' }}
+              tickLine={false}
+            />
+            <YAxis
+              type="category"
+              dataKey="topic"
+              tick={{ fill: '#9CA3AF', fontSize: 11 }}
+              axisLine={{ stroke: '#1F2937' }}
+              tickLine={false}
+              width={110}
+            />
+            <Tooltip
+              contentStyle={tooltipStyle}
+              formatter={(value) => [`${Number(value ?? 0)} min`, 'Time Spent']}
+            />
+            <Bar dataKey="minutes" fill="#06B6D4" radius={[0, 8, 8, 0]} name="Minutes" />
+          </BarChart>
+        </ResponsiveContainer>
       </Card>
     </div>
   );

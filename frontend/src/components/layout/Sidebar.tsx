@@ -8,8 +8,10 @@ import {
   PieChart,
   Cpu,
   Wand2,
+  X,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { AnimatePresence } from 'framer-motion';
 
 const navItems = [
   { label: 'Dashboard', path: '/', icon: Gauge },
@@ -19,9 +21,14 @@ const navItems = [
   { label: 'Analytics', path: '/analytics', icon: PieChart },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  mobileOpen: boolean;
+  onClose: () => void;
+}
+
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <aside className="fixed left-0 top-0 bottom-0 w-[260px] bg-[#0B1120]/98 backdrop-blur-2xl border-r border-[#1F2937]/40 z-50 flex flex-col">
+    <>
       {/* Subtle gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-[#3B82F6]/[0.02] via-transparent to-[#8B5CF6]/[0.02] pointer-events-none" />
       {/* Logo */}
@@ -47,6 +54,7 @@ export function Sidebar() {
           <NavLink
             key={item.path}
             to={item.path}
+            onClick={onNavigate}
             className={({ isActive }) =>
               clsx(
                 'group relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
@@ -97,6 +105,47 @@ export function Sidebar() {
           </div>
         </div>
       </div>
-    </aside>
+    </>
+  );
+}
+
+export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
+  return (
+    <>
+      <aside className="fixed left-0 top-0 bottom-0 w-[260px] bg-[#0B1120]/98 backdrop-blur-2xl border-r border-[#1F2937]/40 z-50 hidden lg:flex flex-col">
+        <SidebarContent />
+      </aside>
+
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onClose}
+              className="fixed inset-0 bg-[#020617]/70 backdrop-blur-sm z-40 lg:hidden"
+              aria-label="Close menu overlay"
+            />
+            <motion.aside
+              initial={{ x: -280, opacity: 0.5 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -280, opacity: 0.5 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+              className="fixed left-0 top-0 bottom-0 w-[260px] bg-[#0B1120] border-r border-[#1F2937]/60 z-50 flex flex-col lg:hidden"
+            >
+              <button
+                onClick={onClose}
+                className="absolute right-3 top-3 p-2 rounded-lg bg-[#111827]/70 border border-[#1F2937]/60"
+                aria-label="Close menu"
+              >
+                <X className="w-4 h-4 text-[#9CA3AF]" />
+              </button>
+              <SidebarContent onNavigate={onClose} />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

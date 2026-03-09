@@ -4,7 +4,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area,
 } from 'recharts';
-import { Timer, Percent, ShieldAlert, Crown, MoveUpRight, Hash } from 'lucide-react';
+import { Timer, Percent, ShieldAlert, Crown, MoveUpRight, Hash, Clock3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 import { Card } from '../components/ui/Card';
@@ -12,7 +12,7 @@ import { ScoreRing } from '../components/ui/ScoreRing';
 import { TopicBadge } from '../components/ui/TopicBadge';
 import { ProgressBar } from '../components/ui/ProgressBar';
 
-import { userPerformance, companyPatterns, weeklyPerformance, aiInsights } from '../data/mockData';
+import { userPerformance, companyPatterns, weeklyPerformance, aiInsights, problemBank, mockTestHistory } from '../data/mockData';
 import { analyzeWeaknesses } from '../utils/weaknessEngine';
 import { calculateOverallReadiness, getCompanyReadinessBreakdown } from '../utils/readinessEngine';
 
@@ -42,6 +42,31 @@ export default function Dashboard() {
   const weakTopics = weaknessData.filter(w => w.classification === 'Weak');
   const avgTopics = weaknessData.filter(w => w.classification === 'Average');
   const strongTopics = weaknessData.filter(w => w.classification === 'Strong');
+
+  const recentActivity = useMemo(() => {
+    const savedProblems = JSON.parse(localStorage.getItem('prepiq_problems') || 'null') || problemBank;
+    const savedMocks = JSON.parse(localStorage.getItem('prepiq_mock_history') || 'null') || mockTestHistory;
+
+    const solvedActivities = savedProblems
+      .filter((problem: { solved: boolean; solvedAt?: string; title: string; topic: string }) => problem.solved && problem.solvedAt)
+      .map((problem: { solvedAt: string; title: string; topic: string }) => ({
+        date: problem.solvedAt,
+        title: `Solved ${problem.title}`,
+        detail: `${problem.topic} problem completed`,
+        type: 'problem' as const,
+      }));
+
+    const mockActivities = savedMocks.map((mock: { date: string; category: string; score: number; type: string }) => ({
+      date: mock.date,
+      title: `${mock.category} mock test`,
+      detail: `${mock.type === 'pattern' ? 'Pattern-wise' : 'Company-wise'} score: ${mock.score}%`,
+      type: 'mock' as const,
+    }));
+
+    return [...solvedActivities, ...mockActivities]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 6);
+  }, []);
 
   const totalSolved = userPerformance.reduce((a, b) => a + b.solved, 0);
   const totalAttempts = userPerformance.reduce((a, b) => a + b.attempts, 0);
@@ -216,6 +241,24 @@ export default function Dashboard() {
                     variant={w.classification.toLowerCase() as 'strong' | 'average' | 'weak'}
                     size="sm"
                   />
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card hover={false}>
+            <h3 className="text-sm font-semibold text-[#E5E7EB] mb-4 flex items-center gap-2">
+              <Clock3 className="w-4 h-4 text-[#06B6D4]" />
+              Recent Activity
+            </h3>
+            <div className="space-y-3">
+              {recentActivity.map((activity, idx) => (
+                <div key={`${activity.title}-${idx}`} className="p-3 rounded-xl border border-[#1F2937]/40 bg-[#0B1120]/60">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm text-[#E5E7EB] truncate">{activity.title}</p>
+                    <span className="text-[10px] text-[#9CA3AF] shrink-0">{activity.date}</span>
+                  </div>
+                  <p className="text-xs text-[#9CA3AF] mt-1">{activity.detail}</p>
                 </div>
               ))}
             </div>

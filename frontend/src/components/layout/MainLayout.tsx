@@ -3,16 +3,18 @@ import { Sidebar } from './Sidebar';
 import { Navbar } from './Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
+import { useState } from 'react';
 
 export function MainLayout() {
   const location = useLocation();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen bg-[#0B1120]">
-      <Sidebar />
-      <div className="flex-1 ml-[260px]">
-        <Navbar />
-        <main className="p-8">
+      <Sidebar mobileOpen={mobileSidebarOpen} onClose={() => setMobileSidebarOpen(false)} />
+      <div className="flex-1 lg:ml-[260px]">
+        <Navbar onMenuClick={() => setMobileSidebarOpen((prev) => !prev)} />
+        <main className="p-4 sm:p-6 lg:p-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}

@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom';
-import { BellDot, Search, Flame } from 'lucide-react';
+import { BellDot, Search, Flame, Menu } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
@@ -10,7 +10,11 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/analytics': { title: 'Analytics', subtitle: 'Deep dive into your performance metrics' },
 };
 
-export function Navbar() {
+interface NavbarProps {
+  onMenuClick: () => void;
+}
+
+export function Navbar({ onMenuClick }: NavbarProps) {
   const location = useLocation();
   const pageInfo = pageTitles[location.pathname] || { title: 'PrepIQ', subtitle: '' };
 
@@ -31,6 +35,14 @@ export function Navbar() {
 
         {/* Right side - Actions */}
         <div className="flex items-center gap-3">
+          <button
+            onClick={onMenuClick}
+            className="lg:hidden p-2.5 rounded-xl bg-[#111827]/60 border border-[#1F2937]/40 hover:bg-[#1F2937]/60 transition-colors"
+            aria-label="Open menu"
+          >
+            <Menu className="w-4 h-4 text-[#9CA3AF]" />
+          </button>
+
           {/* Search bar */}
           <div className="relative hidden md:flex items-center">
             <Search className="absolute left-3 w-4 h-4 text-[#9CA3AF]" />
