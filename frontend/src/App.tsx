@@ -5,6 +5,9 @@ import Problems from './pages/Problems';
 import Roadmap from './pages/Roadmap';
 import MockTest from './pages/MockTest';
 import Analytics from './pages/Analytics';
+import ProblemListPage from './pages/ProblemListPage';
+import ProblemPage from './pages/ProblemPage';
+import SubmissionPage from './pages/SubmissionPage';
 
 function App() {
   return (
@@ -16,6 +19,9 @@ function App() {
           <Route path="/roadmap" element={<Roadmap />} />
           <Route path="/mock-test" element={<MockTest />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/coding/problems" element={<ProblemListPage />} />
+          <Route path="/coding/problems/:problemId" element={<ProblemPage />} />
+          <Route path="/coding/submissions" element={<SubmissionPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom';
-import { BellDot, Search, Flame, Menu } from 'lucide-react';
+import { BellDot, Search, Flame, Menu, LogIn, UserPlus, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../context/useAuth';
 
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Dashboard', subtitle: 'AI-powered overview of your placement readiness' },
@@ -8,7 +9,16 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/roadmap': { title: 'Roadmap', subtitle: 'AI-generated personalized study plan' },
   '/mock-test': { title: 'Mock Test', subtitle: 'Simulate real interview assessments' },
   '/analytics': { title: 'Analytics', subtitle: 'Deep dive into your performance metrics' },
+  '/coding/problems': { title: 'Coding Problems', subtitle: 'Practice coding questions with compiler-backed execution' },
+  '/coding/submissions': { title: 'Submissions', subtitle: 'Track verdicts, runtime, and overall coding progress' },
 };
+
+function resolvePageInfo(pathname: string): { title: string; subtitle: string } {
+  if (pathname.startsWith('/coding/problems/')) {
+    return { title: 'Problem Workspace', subtitle: 'Solve, run, and submit code with real test case evaluation' };
+  }
+  return pageTitles[pathname] || { title: 'PrepIQ', subtitle: '' };
+}
 
 interface NavbarProps {
   onMenuClick: () => void;
@@ -16,7 +26,8 @@ interface NavbarProps {
 
 export function Navbar({ onMenuClick }: NavbarProps) {
   const location = useLocation();
-  const pageInfo = pageTitles[location.pathname] || { title: 'PrepIQ', subtitle: '' };
+  const pageInfo = resolvePageInfo(location.pathname);
+  const { isAuthenticated, authEmail, openAuthModal, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-40 h-20 bg-[#0B1120]/70 backdrop-blur-2xl border-b border-[#1F2937]/30">
@@ -57,7 +68,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           </div>
 
           {/* Streak indicator */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F97316]/10 border border-[#F97316]/20">
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F97316]/10 border border-[#F97316]/20">
             <Flame className="w-3.5 h-3.5 text-[#F97316]" />
             <span className="text-xs font-semibold text-[#F97316]">7 day streak</span>
           </div>
@@ -67,6 +78,38 @@ export function Navbar({ onMenuClick }: NavbarProps) {
             <BellDot className="w-4 h-4 text-[#9CA3AF]" />
             <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#6366F1] border-2 border-[#0B1120]" />
           </button>
+
+          {isAuthenticated ? (
+            <div className="flex items-center gap-2">
+              <div className="hidden md:block rounded-lg border border-[#1F2937]/60 bg-[#111827]/70 px-3 py-2 text-xs text-[#CBD5E1]">
+                {authEmail ?? 'Authenticated'}
+              </div>
+              <button
+                onClick={logout}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#EF4444]/30 bg-[#EF4444]/10 px-3 py-2 text-xs font-semibold text-[#FCA5A5] hover:bg-[#EF4444]/15"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Logout
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => openAuthModal('login')}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#1F2937]/70 bg-[#111827]/70 px-3 py-2 text-xs font-semibold text-[#E5E7EB] hover:bg-[#1F2937]/70"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Login</span>
+              </button>
+              <button
+                onClick={() => openAuthModal('register')}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#2563EB] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1D4ED8]"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Register</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

@@ -6,6 +6,7 @@ import {
   Compass,
   Crosshair,
   PieChart,
+  TerminalSquare,
   Cpu,
   Wand2,
   X,
@@ -19,6 +20,7 @@ const navItems = [
   { label: 'Roadmap', path: '/roadmap', icon: Compass },
   { label: 'Mock Test', path: '/mock-test', icon: Crosshair },
   { label: 'Analytics', path: '/analytics', icon: PieChart },
+  { label: 'Coding Arena', path: '/coding/problems', icon: TerminalSquare },
 ];
 
 interface SidebarProps {
