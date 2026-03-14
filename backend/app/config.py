@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 120
 
-    execution_timeout_seconds: int = 2
+    execution_timeout_seconds: int = 20
     execution_cpu_limit: float = 0.5
     execution_memory_limit_mb: int = 256
     docker_image_cpp: str = "prepiq-executor:latest"
