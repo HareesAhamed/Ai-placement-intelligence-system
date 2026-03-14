@@ -26,7 +26,7 @@ class CodeExecutor:
         )
 
     def execute(self, language: str, code: str, input_data: str = "") -> ExecuteResult:
-        if language not in {"cpp", "java"}:
+        if language not in {"cpp", "python", "java", "javascript"}:
             return ExecuteResult(output="", stderr="Unsupported language", status="error", runtime_ms=0)
 
         with TemporaryDirectory(prefix="prepiq-exec-") as tmp_dir_name:
@@ -37,10 +37,18 @@ class CodeExecutor:
                 (tmp_dir / "main.cpp").write_text(code, encoding="utf-8")
                 command = "g++ -O2 -std=c++17 main.cpp -o main && ./main < stdin.txt"
                 image = self.settings.docker_image_cpp
-            else:
+            elif language == "java":
                 (tmp_dir / "Main.java").write_text(code, encoding="utf-8")
                 command = "javac Main.java && java Main < stdin.txt"
                 image = self.settings.docker_image_java
+            elif language == "python":
+                (tmp_dir / "main.py").write_text(code, encoding="utf-8")
+                command = "python3 main.py < stdin.txt"
+                image = self.settings.docker_image_python
+            else:
+                (tmp_dir / "main.js").write_text(code, encoding="utf-8")
+                command = "node main.js < stdin.txt"
+                image = self.settings.docker_image_javascript
 
             start = perf_counter()
             result = self.runner.run_command(image=image, mount_dir=tmp_dir, command=command)

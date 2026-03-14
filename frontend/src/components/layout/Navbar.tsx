@@ -5,16 +5,15 @@ import { useAuth } from '../../context/useAuth';
 
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Dashboard', subtitle: 'AI-powered overview of your placement readiness' },
-  '/problems': { title: 'Problems', subtitle: 'Track and analyze your problem-solving patterns' },
+  '/problems': { title: 'Problems', subtitle: 'LeetCode-style list with premium filters, tags, bookmarks, and status' },
   '/roadmap': { title: 'Roadmap', subtitle: 'AI-generated personalized study plan' },
-  '/mock-test': { title: 'Mock Test', subtitle: 'Simulate real interview assessments' },
   '/analytics': { title: 'Analytics', subtitle: 'Deep dive into your performance metrics' },
-  '/coding/problems': { title: 'Coding Problems', subtitle: 'Practice coding questions with compiler-backed execution' },
-  '/coding/submissions': { title: 'Submissions', subtitle: 'Track verdicts, runtime, and overall coding progress' },
+  '/contests': { title: 'Contests', subtitle: 'Track upcoming, live, and past coding contests' },
+  '/profile': { title: 'Profile', subtitle: 'Connect external coding profiles and sync platform stats' },
 };
 
 function resolvePageInfo(pathname: string): { title: string; subtitle: string } {
-  if (pathname.startsWith('/coding/problems/')) {
+  if (pathname.startsWith('/problems/')) {
     return { title: 'Problem Workspace', subtitle: 'Solve, run, and submit code with real test case evaluation' };
   }
   return pageTitles[pathname] || { title: 'PrepIQ', subtitle: '' };

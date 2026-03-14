@@ -48,16 +48,30 @@ class TestcaseRunner:
         run_commands = " && ".join(
             f"./main < input_{idx}.txt > output_{idx}.txt 2> error_{idx}.txt"
             if language == "cpp"
-            else f"java Main < input_{idx}.txt > output_{idx}.txt 2> error_{idx}.txt"
+            else (
+                f"java Main < input_{idx}.txt > output_{idx}.txt 2> error_{idx}.txt"
+                if language == "java"
+                else (
+                    f"python3 main.py < input_{idx}.txt > output_{idx}.txt 2> error_{idx}.txt"
+                    if language == "python"
+                    else f"node main.js < input_{idx}.txt > output_{idx}.txt 2> error_{idx}.txt"
+                )
+            )
             for idx in range(total)
         )
 
         if language == "cpp":
             command = f"g++ -O2 -std=c++17 main.cpp -o main && {run_commands}"
             image = self.settings.docker_image_cpp
-        else:
+        elif language == "java":
             command = f"javac Main.java && {run_commands}"
             image = self.settings.docker_image_java
+        elif language == "python":
+            command = run_commands
+            image = self.settings.docker_image_python
+        else:
+            command = run_commands
+            image = self.settings.docker_image_javascript
 
         return command, image
 
@@ -79,7 +93,7 @@ class TestcaseRunner:
         visible_testcases: list[dict[str, str]],
         hidden_testcases: list[dict[str, str]],
     ) -> TestcaseRunResult:
-        if language not in {"cpp", "java"}:
+        if language not in {"cpp", "python", "java", "javascript"}:
             return TestcaseRunResult(status="Runtime Error", passed=0, total=0, max_runtime_ms=0)
 
         testcases = [*visible_testcases, *hidden_testcases]
@@ -92,8 +106,12 @@ class TestcaseRunner:
 
             if language == "cpp":
                 (tmp_dir / "main.cpp").write_text(code, encoding="utf-8")
-            else:
+            elif language == "java":
                 (tmp_dir / "Main.java").write_text(code, encoding="utf-8")
+            elif language == "python":
+                (tmp_dir / "main.py").write_text(code, encoding="utf-8")
+            else:
+                (tmp_dir / "main.js").write_text(code, encoding="utf-8")
 
             for idx, testcase in enumerate(testcases):
                 (tmp_dir / f"input_{idx}.txt").write_text(testcase["input"], encoding="utf-8")
@@ -113,7 +131,12 @@ class TestcaseRunner:
                 )
 
             if result.return_code != 0:
-                compiled = (tmp_dir / "main").exists() if language == "cpp" else (tmp_dir / "Main.class").exists()
+                if language == "cpp":
+                    compiled = (tmp_dir / "main").exists()
+                elif language == "java":
+                    compiled = (tmp_dir / "Main.class").exists()
+                else:
+                    compiled = True
                 if not compiled:
                     return TestcaseRunResult(
                         status="Compilation Error",

@@ -9,6 +9,8 @@
 docker build -f executor.Dockerfile -t prepiq-executor:latest .
 ```
 
+The execution image now includes C++, Java, Python, and JavaScript runtimes.
+
 3. Install dependencies and run API:
 
 ```bash
@@ -34,3 +36,10 @@ docker compose up db -d
 - `POST /submissions` (JWT required)
 - `GET /submissions` (JWT required)
 - `GET /submissions/analytics/summary` (JWT required)
+- `POST /problems/{id}/bookmark` (JWT required)
+- `GET /platform-connectors/accounts` (JWT required)
+- `POST /platform-connectors/accounts` (JWT required)
+- `GET /platform-connectors/stats` (JWT required)
+- `POST /platform-connectors/sync` (JWT required)
+- `GET /contests`
+- `POST /contests/sync`

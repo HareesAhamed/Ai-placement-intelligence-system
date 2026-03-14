@@ -16,3 +16,6 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     submissions = relationship("Submission", back_populates="user", cascade="all, delete-orphan")
+    bookmarks = relationship("ProblemBookmark", back_populates="user", cascade="all, delete-orphan")
+    platform_accounts = relationship("UserPlatformAccount", back_populates="user", cascade="all, delete-orphan")
+    platform_stats = relationship("UserPlatformStat", back_populates="user", cascade="all, delete-orphan")

@@ -4,6 +4,8 @@ RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         build-essential \
         openjdk-21-jdk-headless \
+        python3 \
+        nodejs \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 

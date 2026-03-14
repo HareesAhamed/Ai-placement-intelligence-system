@@ -19,7 +19,13 @@ class Settings(BaseSettings):
     execution_memory_limit_mb: int = 256
     docker_image_cpp: str = "prepiq-executor:latest"
     docker_image_java: str = "prepiq-executor:latest"
+    docker_image_python: str = "prepiq-executor:latest"
+    docker_image_javascript: str = "prepiq-executor:latest"
     cors_allowed_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173"
+    clist_api_username: str | None = None
+    clist_api_key: str | None = None
+    contest_sync_hour_utc: int = 2
+    connectors_user_agent: str = "PrepIQ/1.0"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=False)
 

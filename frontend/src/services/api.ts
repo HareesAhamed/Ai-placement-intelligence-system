@@ -3,9 +3,14 @@ import type { InternalAxiosRequestConfig } from 'axios';
 
 import type {
   AnalyticsSummary,
+  ContestItem,
   CodingProblem,
   ExecutePayload,
   ExecuteResult,
+  PlatformAccount,
+  PlatformAccountPayload,
+  PlatformStat,
+  ProblemListItem,
   SubmissionItem,
   SubmissionResult,
 } from '../types/coding';
@@ -91,8 +96,17 @@ export async function registerDemoUser(): Promise<void> {
   }
 }
 
-export async function fetchProblems(params?: { difficulty?: string; topic?: string }): Promise<CodingProblem[]> {
-  const res = await api.get<CodingProblem[]>('/problems', { params });
+export async function fetchProblems(params?: {
+  difficulty?: string;
+  topic?: string;
+  company?: string;
+  status?: string;
+  tab?: 'all' | 'premium';
+  page?: number;
+  page_size?: number;
+  search?: string;
+}): Promise<ProblemListItem[]> {
+  const res = await api.get<ProblemListItem[]>('/problems', { params });
   return res.data;
 }
 
@@ -108,19 +122,56 @@ export async function executeCode(payload: ExecutePayload): Promise<ExecuteResul
 
 export async function submitCode(payload: {
   problem_id: number;
-  language: 'cpp' | 'java';
+  language: 'cpp' | 'python' | 'java' | 'javascript';
   code: string;
 }): Promise<SubmissionResult> {
   const res = await api.post<SubmissionResult>('/submissions', payload);
   return res.data;
 }
 
-export async function fetchSubmissions(): Promise<SubmissionItem[]> {
-  const res = await api.get<SubmissionItem[]>('/submissions');
+export async function fetchSubmissions(problemId?: number): Promise<SubmissionItem[]> {
+  const res = await api.get<SubmissionItem[]>('/submissions', {
+    params: problemId ? { problem_id: problemId } : undefined,
+  });
   return res.data;
 }
 
 export async function fetchAnalyticsSummary(): Promise<AnalyticsSummary> {
   const res = await api.get<AnalyticsSummary>('/submissions/analytics/summary');
+  return res.data;
+}
+
+export async function toggleProblemBookmark(problemId: number): Promise<{ problem_id: number; bookmarked: boolean }> {
+  const res = await api.post<{ problem_id: number; bookmarked: boolean }>(`/problems/${problemId}/bookmark`);
+  return res.data;
+}
+
+export async function fetchPlatformAccounts(): Promise<PlatformAccount[]> {
+  const res = await api.get<PlatformAccount[]>('/platform-connectors/accounts');
+  return res.data;
+}
+
+export async function upsertPlatformAccount(payload: PlatformAccountPayload): Promise<PlatformAccount> {
+  const res = await api.post<PlatformAccount>('/platform-connectors/accounts', payload);
+  return res.data;
+}
+
+export async function fetchPlatformStats(): Promise<PlatformStat[]> {
+  const res = await api.get<PlatformStat[]>('/platform-connectors/stats');
+  return res.data;
+}
+
+export async function syncPlatformStats(): Promise<{ synced: number; message: string }> {
+  const res = await api.post<{ synced: number; message: string }>('/platform-connectors/sync');
+  return res.data;
+}
+
+export async function fetchContests(section: 'all' | 'upcoming' | 'live' | 'past' = 'all'): Promise<ContestItem[]> {
+  const res = await api.get<ContestItem[]>('/contests', { params: { section } });
+  return res.data;
+}
+
+export async function syncContests(): Promise<{ synced: number }> {
+  const res = await api.post<{ synced: number }>('/contests/sync');
   return res.data;
 }

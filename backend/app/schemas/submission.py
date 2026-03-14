@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class SubmissionCreate(BaseModel):
     problem_id: int
-    language: str = Field(pattern="^(cpp|java)$")
+    language: str = Field(pattern="^(cpp|python|java|javascript)$")
     code: str = Field(min_length=1, max_length=100000)
 
 
@@ -30,3 +30,4 @@ class SubmissionResult(BaseModel):
     passed: int
     total: int
     runtime_ms: int | None
+    memory_kb: int | None

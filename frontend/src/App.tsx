@@ -3,11 +3,10 @@ import { MainLayout } from './components/layout/MainLayout';
 import Dashboard from './pages/Dashboard';
 import Problems from './pages/Problems';
 import Roadmap from './pages/Roadmap';
-import MockTest from './pages/MockTest';
 import Analytics from './pages/Analytics';
-import ProblemListPage from './pages/ProblemListPage';
-import ProblemPage from './pages/ProblemPage';
-import SubmissionPage from './pages/SubmissionPage';
+import ProblemWorkspace from './pages/ProblemWorkspace';
+import Contests from './pages/Contests';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -16,12 +15,11 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/problems" element={<Problems />} />
+          <Route path="/problems/:problemId" element={<ProblemWorkspace />} />
           <Route path="/roadmap" element={<Roadmap />} />
-          <Route path="/mock-test" element={<MockTest />} />
           <Route path="/analytics" element={<Analytics />} />
-          <Route path="/coding/problems" element={<ProblemListPage />} />
-          <Route path="/coding/problems/:problemId" element={<ProblemPage />} />
-          <Route path="/coding/submissions" element={<SubmissionPage />} />
+          <Route path="/contests" element={<Contests />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
       </Routes>
     </BrowserRouter>

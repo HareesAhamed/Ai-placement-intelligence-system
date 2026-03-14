@@ -4,12 +4,12 @@ import {
   Gauge,
   CodeXml,
   Compass,
-  Crosshair,
   PieChart,
-  TerminalSquare,
   Cpu,
   Wand2,
   X,
+  Trophy,
+  UserCircle2,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { AnimatePresence } from 'framer-motion';
@@ -18,9 +18,9 @@ const navItems = [
   { label: 'Dashboard', path: '/', icon: Gauge },
   { label: 'Problems', path: '/problems', icon: CodeXml },
   { label: 'Roadmap', path: '/roadmap', icon: Compass },
-  { label: 'Mock Test', path: '/mock-test', icon: Crosshair },
   { label: 'Analytics', path: '/analytics', icon: PieChart },
-  { label: 'Coding Arena', path: '/coding/problems', icon: TerminalSquare },
+  { label: 'Contests', path: '/contests', icon: Trophy },
+  { label: 'Profile', path: '/profile', icon: UserCircle2 },
 ];
 
 interface SidebarProps {

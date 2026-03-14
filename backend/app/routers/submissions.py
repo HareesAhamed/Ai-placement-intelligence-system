@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -97,12 +97,21 @@ def create_submission(
         passed=submission.passed_testcases,
         total=submission.total_testcases,
         runtime_ms=submission.runtime_ms,
+        memory_kb=submission.memory_kb,
     )
 
 
 @router.get("", response_model=list[SubmissionRead])
-def list_submissions(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> list[Submission]:
-    return list(db.scalars(select(Submission).where(Submission.user_id == current_user.id).order_by(Submission.created_at.desc())).all())
+def list_submissions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    problem_id: int | None = Query(default=None),
+) -> list[Submission]:
+    query = select(Submission).where(Submission.user_id == current_user.id)
+    if problem_id is not None:
+        query = query.where(Submission.problem_id == problem_id)
+    query = query.order_by(Submission.created_at.desc())
+    return list(db.scalars(query).all())
 
 
 @router.get("/analytics/summary", response_model=AnalyticsSummary)
