@@ -14,6 +14,8 @@ class Problem(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     difficulty: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     topic: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    subtopic: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    tutorial_link: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     topic_tags: Mapped[list[str]] = mapped_column(JSON, default=list)
     is_premium: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     description: Mapped[str] = mapped_column(Text, nullable=False)

@@ -19,3 +19,6 @@ class User(Base):
     bookmarks = relationship("ProblemBookmark", back_populates="user", cascade="all, delete-orphan")
     platform_accounts = relationship("UserPlatformAccount", back_populates="user", cascade="all, delete-orphan")
     platform_stats = relationship("UserPlatformStat", back_populates="user", cascade="all, delete-orphan")
+    survey = relationship("OnboardingSurvey", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    assessment_attempts = relationship("AssessmentAttempt", back_populates="user", cascade="all, delete-orphan")
+    roadmap_plans = relationship("RoadmapPlan", back_populates="user", cascade="all, delete-orphan")

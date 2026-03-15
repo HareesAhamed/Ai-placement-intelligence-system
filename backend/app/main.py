@@ -5,7 +5,19 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from app.config import get_cors_origins, get_settings
 from app.database import Base, SessionLocal, engine
 import app.models  # noqa: F401
-from app.routers import auth, contests, execution, platform_connectors, problems, submissions
+from app.routers import (
+    analytics,
+    assessment,
+    auth,
+    contests,
+    execution,
+    platform_connectors,
+    problems,
+    roadmap,
+    submissions,
+    survey,
+    tutorials,
+)
 from app.services.contest_service import contest_service
 
 settings = get_settings()
@@ -57,3 +69,8 @@ app.include_router(problems.router, prefix="/problems", tags=["problems"])
 app.include_router(submissions.router, prefix="/submissions", tags=["submissions"])
 app.include_router(platform_connectors.router)
 app.include_router(contests.router)
+app.include_router(survey.router)
+app.include_router(assessment.router)
+app.include_router(roadmap.router)
+app.include_router(analytics.router)
+app.include_router(tutorials.router)

@@ -8,7 +8,9 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from app.config import get_settings
 from app.database import Base, engine, SessionLocal
+from app.models.company_pattern import CompanyPattern
 from app.models.problem import Problem
+from app.models.tutorial import Tutorial
 import app.models  # noqa: F401
 
 PROBLEMS = [
@@ -328,22 +330,104 @@ PROBLEMS = [
     },
 ]
 
+COMPANY_PATTERNS = [
+    {"company": "Amazon", "topic": "Graphs", "weight": 0.3},
+    {"company": "Amazon", "topic": "Dynamic Programming", "weight": 0.25},
+    {"company": "Amazon", "topic": "Arrays", "weight": 0.25},
+    {"company": "Amazon", "topic": "Strings", "weight": 0.2},
+    {"company": "Google", "topic": "Graphs", "weight": 0.3},
+    {"company": "Google", "topic": "Dynamic Programming", "weight": 0.3},
+    {"company": "Google", "topic": "Arrays", "weight": 0.2},
+    {"company": "Google", "topic": "Trees", "weight": 0.2},
+    {"company": "Microsoft", "topic": "Arrays", "weight": 0.3},
+    {"company": "Microsoft", "topic": "Strings", "weight": 0.25},
+    {"company": "Microsoft", "topic": "Trees", "weight": 0.25},
+    {"company": "Microsoft", "topic": "Hashing", "weight": 0.2},
+]
+
+TUTORIALS = [
+    {
+        "topic": "Arrays",
+        "title": "Arrays Fundamentals",
+        "concept": "Arrays store elements in contiguous memory and are best for indexed access and scanning patterns.",
+        "code_example": "# Python\narr = [2, 7, 11, 15]\nfor i, val in enumerate(arr):\n    print(i, val)",
+        "complexity": "Access: O(1), Search: O(n)",
+        "practice_tips": "Master prefix sums, sliding window, and two-pointer transformations.",
+        "resource_link": "https://takeuforward.org/arrays/",
+    },
+    {
+        "topic": "Strings",
+        "title": "Strings Essentials",
+        "concept": "String problems often combine frequency counting, windowing, and pattern matching.",
+        "code_example": "# Python\ns = 'prepiq'\nprint(s[::-1])",
+        "complexity": "Traversal: O(n)",
+        "practice_tips": "Practice anagram checks, palindrome variants, and substring windows.",
+        "resource_link": "https://takeuforward.org/strings/",
+    },
+    {
+        "topic": "Recursion",
+        "title": "Recursion Patterns",
+        "concept": "Recursion solves a problem by reducing it into smaller instances until base conditions are met.",
+        "code_example": "def fib(n):\n    if n < 2:\n        return n\n    return fib(n-1) + fib(n-2)",
+        "complexity": "Depends on branching; optimize with memoization.",
+        "practice_tips": "Trace call stacks by hand and identify overlapping subproblems.",
+        "resource_link": "https://takeuforward.org/recursion/",
+    },
+    {
+        "topic": "Binary Search",
+        "title": "Binary Search Mastery",
+        "concept": "Binary search reduces the search space by half on each step in sorted or monotonic domains.",
+        "code_example": "def bsearch(nums, target):\n    l, r = 0, len(nums)-1\n    while l <= r:\n        m = (l+r)//2\n        if nums[m] == target:\n            return m\n        if nums[m] < target:\n            l = m + 1\n        else:\n            r = m - 1\n    return -1",
+        "complexity": "O(log n)",
+        "practice_tips": "Learn first/last occurrence and answer-space binary search.",
+        "resource_link": "https://takeuforward.org/binary-search/",
+    },
+    {
+        "topic": "Dynamic Programming",
+        "title": "DP Core Concepts",
+        "concept": "DP converts repeated recursive states into memoized or tabulated transitions.",
+        "code_example": "def climb(n):\n    a, b = 1, 1\n    for _ in range(n-1):\n        a, b = b, a+b\n    return b",
+        "complexity": "State dependent",
+        "practice_tips": "Always define state, transition, and base cases explicitly.",
+        "resource_link": "https://takeuforward.org/dynamic-programming/",
+    },
+]
+
+TOPIC_TUTORIAL_MAP = {row["topic"]: row["resource_link"] for row in TUTORIALS}
+
 
 def seed():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
-        existing = db.query(Problem).count()
-        if existing > 0:
-            print(f"Database already has {existing} problems. Skipping seed.")
-            return
+        existing_problems = db.query(Problem).count()
+        if existing_problems == 0:
+            for data in PROBLEMS:
+                seed_data = {**data, "tutorial_link": TOPIC_TUTORIAL_MAP.get(data["topic"])}
+                problem = Problem(**seed_data)
+                db.add(problem)
+            print(f"Prepared {len(PROBLEMS)} problems for insert.")
+        else:
+            print(f"Database already has {existing_problems} problems. Skipping problem insert.")
 
-        for data in PROBLEMS:
-            problem = Problem(**data)
-            db.add(problem)
+        existing_patterns = db.query(CompanyPattern).count()
+        if existing_patterns == 0:
+            for row in COMPANY_PATTERNS:
+                db.add(CompanyPattern(**row))
+            print(f"Prepared {len(COMPANY_PATTERNS)} company pattern rows for insert.")
+        else:
+            print(f"Database already has {existing_patterns} company patterns. Skipping pattern insert.")
+
+        existing_tutorials = db.query(Tutorial).count()
+        if existing_tutorials == 0:
+            for row in TUTORIALS:
+                db.add(Tutorial(**row))
+            print(f"Prepared {len(TUTORIALS)} tutorials for insert.")
+        else:
+            print(f"Database already has {existing_tutorials} tutorials. Skipping tutorial insert.")
 
         db.commit()
-        print(f"Successfully seeded {len(PROBLEMS)} problems.")
+        print("Seeding complete.")
     finally:
         db.close()
 

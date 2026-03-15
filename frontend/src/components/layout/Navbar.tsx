@@ -8,6 +8,8 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/problems': { title: 'Problems', subtitle: 'LeetCode-style list with premium filters, tags, bookmarks, and status' },
   '/roadmap': { title: 'Roadmap', subtitle: 'AI-generated personalized study plan' },
   '/analytics': { title: 'Analytics', subtitle: 'Deep dive into your performance metrics' },
+  '/tutorials': { title: 'Tutorials', subtitle: 'Topic-wise concept guides, examples, and complexity notes' },
+  '/onboarding': { title: 'Onboarding', subtitle: 'Set your preparation goals to personalize AI roadmap generation' },
   '/contests': { title: 'Contests', subtitle: 'Track upcoming, live, and past coding contests' },
   '/profile': { title: 'Profile', subtitle: 'Connect external coding profiles and sync platform stats' },
 };

@@ -2,6 +2,9 @@ import axios from 'axios';
 import type { InternalAxiosRequestConfig } from 'axios';
 
 import type {
+  AssessmentProblem,
+  AssessmentSubmitResult,
+  AssessmentSummary,
   AnalyticsSummary,
   ContestItem,
   CodingProblem,
@@ -11,8 +14,13 @@ import type {
   PlatformAccountPayload,
   PlatformStat,
   ProblemListItem,
+  RoadmapPlan,
   SubmissionItem,
   SubmissionResult,
+  SurveyPayload,
+  SurveyResponse,
+  TopicStrength,
+  TutorialItem,
 } from '../types/coding';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
@@ -173,5 +181,88 @@ export async function fetchContests(section: 'all' | 'upcoming' | 'live' | 'past
 
 export async function syncContests(): Promise<{ synced: number }> {
   const res = await api.post<{ synced: number }>('/contests/sync');
+  return res.data;
+}
+
+export async function submitSurvey(payload: SurveyPayload): Promise<SurveyResponse> {
+  const res = await api.post<SurveyResponse>('/survey/submit', payload);
+  return res.data;
+}
+
+export async function fetchSurvey(): Promise<SurveyResponse> {
+  const res = await api.get<SurveyResponse>('/survey');
+  return res.data;
+}
+
+export async function fetchAssessmentProblems(): Promise<AssessmentProblem[]> {
+  const res = await api.get<AssessmentProblem[]>('/assessment/problems');
+  return res.data;
+}
+
+export async function submitAssessment(payload: {
+  problem_id: number;
+  language: 'cpp' | 'python' | 'java';
+  code: string;
+}): Promise<AssessmentSubmitResult> {
+  const res = await api.post<AssessmentSubmitResult>('/assessment/submit', payload);
+  return res.data;
+}
+
+export async function fetchAssessmentSummary(): Promise<AssessmentSummary> {
+  const res = await api.get<AssessmentSummary>('/assessment/summary');
+  return res.data;
+}
+
+export async function generateRoadmap(): Promise<RoadmapPlan> {
+  const res = await api.post<RoadmapPlan>('/roadmap/generate');
+  return res.data;
+}
+
+export async function fetchRoadmap(): Promise<RoadmapPlan> {
+  const res = await api.get<RoadmapPlan>('/roadmap');
+  return res.data;
+}
+
+export async function refreshRoadmap(): Promise<{ roadmap: RoadmapPlan; insights: string[] }> {
+  const res = await api.post<{ roadmap: RoadmapPlan; insights: string[] }>('/roadmap/refresh');
+  return res.data;
+}
+
+export async function completeRoadmapDay(dayId: number): Promise<void> {
+  await api.post(`/roadmap/day/${dayId}/complete`);
+}
+
+export async function fetchTopicStrength(): Promise<{ topics: TopicStrength[] }> {
+  const res = await api.get<{ topics: TopicStrength[] }>('/analytics/topic-strength');
+  return res.data;
+}
+
+export async function fetchCompanyReadiness(): Promise<{ readiness: Record<string, number> }> {
+  const res = await api.get<{ readiness: Record<string, number> }>('/analytics/company-readiness');
+  return res.data;
+}
+
+export async function fetchProgressAnalytics(): Promise<{
+  roadmap_completion: number;
+  accuracy: number;
+  attempt_count: number;
+  consistency: Array<{ date: string; attempts: number }>;
+}> {
+  const res = await api.get<{
+    roadmap_completion: number;
+    accuracy: number;
+    attempt_count: number;
+    consistency: Array<{ date: string; attempts: number }>;
+  }>('/analytics/progress');
+  return res.data;
+}
+
+export async function fetchTutorials(): Promise<TutorialItem[]> {
+  const res = await api.get<TutorialItem[]>('/tutorials');
+  return res.data;
+}
+
+export async function fetchTutorial(topic: string): Promise<TutorialItem> {
+  const res = await api.get<TutorialItem>(`/tutorials/${topic}`);
   return res.data;
 }

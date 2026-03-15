@@ -5,11 +5,13 @@ import {
   CodeXml,
   Compass,
   PieChart,
+  BookOpenText,
   Cpu,
   Wand2,
   X,
   Trophy,
   UserCircle2,
+  ClipboardList,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { AnimatePresence } from 'framer-motion';
@@ -19,6 +21,8 @@ const navItems = [
   { label: 'Problems', path: '/problems', icon: CodeXml },
   { label: 'Roadmap', path: '/roadmap', icon: Compass },
   { label: 'Analytics', path: '/analytics', icon: PieChart },
+  { label: 'Tutorials', path: '/tutorials', icon: BookOpenText },
+  { label: 'Onboarding', path: '/onboarding', icon: ClipboardList },
   { label: 'Contests', path: '/contests', icon: Trophy },
   { label: 'Profile', path: '/profile', icon: UserCircle2 },
 ];

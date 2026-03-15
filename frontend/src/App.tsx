@@ -7,6 +7,8 @@ import Analytics from './pages/Analytics';
 import ProblemWorkspace from './pages/ProblemWorkspace';
 import Contests from './pages/Contests';
 import Profile from './pages/Profile';
+import Onboarding from './pages/Onboarding';
+import Tutorials from './pages/Tutorials';
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
           <Route path="/problems/:problemId" element={<ProblemWorkspace />} />
           <Route path="/roadmap" element={<Roadmap />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/tutorials" element={<Tutorials />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/contests" element={<Contests />} />
           <Route path="/profile" element={<Profile />} />
         </Route>

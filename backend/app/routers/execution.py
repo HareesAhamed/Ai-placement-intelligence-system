@@ -9,6 +9,7 @@ router = APIRouter()
 
 
 @router.post("/execute", response_model=ExecuteResponse)
+@router.post("/compiler/run", response_model=ExecuteResponse)
 def execute_code(payload: ExecuteRequest, _: User = Depends(get_current_user)) -> ExecuteResponse:
     result = code_executor.execute(payload.language, payload.code, payload.input)
     return ExecuteResponse(
