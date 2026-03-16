@@ -31,8 +31,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
   const { isAuthenticated, authEmail, openAuthModal, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-40 h-20 bg-[#0B1120]/70 backdrop-blur-2xl border-b border-[#1F2937]/30">
-      <div className="absolute inset-0 bg-gradient-to-r from-[#3B82F6]/[0.01] to-[#8B5CF6]/[0.01] pointer-events-none" />
+    <header className="sticky top-0 z-40 h-20 bg-[#0B0F14]/90 backdrop-blur-xl border-b border-[#222A33]">
       <div className="flex items-center justify-between h-full px-8">
         {/* Left side - Page title */}
         <motion.div

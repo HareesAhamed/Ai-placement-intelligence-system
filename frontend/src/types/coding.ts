@@ -5,6 +5,7 @@ export interface CodingProblem {
   title: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   topic: string;
+  tutorial_link?: string | null;
   topic_tags: string[];
   is_premium: boolean;
   description: string;

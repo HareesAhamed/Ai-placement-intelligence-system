@@ -4,12 +4,16 @@ import { Bookmark, CheckCircle2, Clock3, MemoryStick, Play, Send, TriangleAlert 
 import { useParams } from 'react-router-dom';
 
 import { AuthRequiredCard } from '../components/auth/AuthRequiredCard';
+import { ProblemEditor } from '../components/problems/ProblemEditor';
 import { Card } from '../components/ui/Card';
 import { useAuth } from '../context/useAuth';
 import {
   executeCode,
   fetchProblem,
+  fetchProgressAnalytics,
+  fetchRoadmap,
   fetchSubmissions,
+  fetchTopicStrength,
   submitCode,
   toggleProblemBookmark,
 } from '../services/api';
@@ -44,6 +48,8 @@ export default function ProblemWorkspace() {
   const [memory, setMemory] = useState<string>('');
   const [running, setRunning] = useState(false);
   const [split, setSplit] = useState(47);
+  const [roadmapDayTag, setRoadmapDayTag] = useState<number | null>(null);
+  const [postSubmitInsight, setPostSubmitInsight] = useState<string>('');
 
   const splitContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -57,6 +63,16 @@ export default function ProblemWorkspace() {
       setProblem(fetchedProblem);
       setSubmissions(fetchedSubmissions);
       setInput(fetchedProblem.examples[0]?.input ?? '');
+
+      if (isAuthenticated) {
+        try {
+          const roadmap = await fetchRoadmap();
+          const match = roadmap.days.find((day) => day.topic.toLowerCase() === fetchedProblem.topic.toLowerCase());
+          setRoadmapDayTag(match ? match.day_number : null);
+        } catch {
+          setRoadmapDayTag(null);
+        }
+      }
     })();
   }, [problemId, isAuthenticated]);
 
@@ -123,6 +139,20 @@ export default function ProblemWorkspace() {
       const updated = await fetchSubmissions(problem.id);
       setSubmissions(updated);
       setProblem((prev) => (prev ? { ...prev, solved: result.status === 'Accepted' || prev.solved } : prev));
+
+      try {
+        const [progress, topicStrength] = await Promise.all([
+          fetchProgressAnalytics(),
+          fetchTopicStrength(),
+        ]);
+        const topicItem = topicStrength.topics.find((topic) => topic.topic.toLowerCase() === problem.topic.toLowerCase());
+        const topicImpact = topicItem ? `${topicItem.classification} (${topicItem.accuracy}% accuracy)` : 'updating';
+        setPostSubmitInsight(
+          `Roadmap progress ${progress.roadmap_completion}% • Topic mastery impact for ${problem.topic}: ${topicImpact}.`
+        );
+      } catch {
+        setPostSubmitInsight('Submission recorded. Analytics refresh is temporarily unavailable.');
+      }
     } catch {
       setStatus('Error');
       setOutput('Submission failed. Verify backend, token, and problem data.');
@@ -164,6 +194,11 @@ export default function ProblemWorkspace() {
           <div className="mt-1 flex items-center gap-2 text-xs text-[#94A3B8]">
             <span className="rounded-full border border-[#334155] bg-[#111827] px-2 py-0.5">{problem.difficulty}</span>
             <span>{problem.topic_tags.join(' • ') || problem.topic}</span>
+            {roadmapDayTag ? (
+              <span className="rounded-md border border-[#1D4ED8]/50 bg-[#1D4ED8]/15 px-2 py-0.5 text-[#93C5FD]">
+                Roadmap Day {roadmapDayTag}
+              </span>
+            ) : null}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -208,6 +243,31 @@ export default function ProblemWorkspace() {
               </div>
             ) : null}
 
+            {problem.hints.length > 0 ? (
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-[#94A3B8]">Hints</h3>
+                <ul className="mt-2 space-y-1 text-sm text-[#CBD5E1]">
+                  {problem.hints.map((hint) => (
+                    <li key={`${problem.id}-${hint}`}>• {hint}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            {problem.tutorial_link ? (
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-[#94A3B8]">Tutorial</h3>
+                <a
+                  href={problem.tutorial_link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-block text-sm font-semibold text-[#60A5FA] underline underline-offset-2"
+                >
+                  Open tutorial resource
+                </a>
+              </div>
+            ) : null}
+
             <div>
               <h3 className="text-sm font-semibold uppercase tracking-wide text-[#94A3B8]">Tags</h3>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -234,56 +294,20 @@ export default function ProblemWorkspace() {
 
         <div onMouseDown={startDragging} className="h-full w-1 cursor-col-resize bg-[#1F2937] hover:bg-[#2563EB]" />
 
-        <section className="flex flex-1 flex-col">
-          <div className="flex items-center justify-between border-b border-[#1F2937] px-4 py-3">
-            <div className="flex items-center gap-3">
-              <p className="text-sm font-semibold text-[#E2E8F0]">Code Editor</p>
-              <select
-                value={language}
-                onChange={(event) => setLanguage(event.target.value as CodeLanguage)}
-                className="rounded-lg border border-[#1F2937] bg-[#111827] px-2.5 py-1.5 text-xs text-[#E2E8F0]"
-              >
-                {languageLabel.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => void onRun()}
-                disabled={running}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[#1F2937] bg-[#111827] px-3 py-2 text-xs font-semibold text-[#E2E8F0] disabled:opacity-60"
-              >
-                <Play className="h-3.5 w-3.5" />
-                Run
-              </button>
-              <button
-                onClick={() => void onSubmit()}
-                disabled={running}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#2563EB] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
-              >
-                <Send className="h-3.5 w-3.5" />
-                Submit
-              </button>
-            </div>
-          </div>
-
-          <Editor
-            theme="vs-dark"
-            language={monacoLanguage}
-            value={code}
-            onChange={(value) => setCode(value ?? '')}
-            options={{
-              minimap: { enabled: false },
-              fontSize: 14,
-              automaticLayout: true,
-              tabSize: 2,
-              smoothScrolling: true,
-            }}
-          />
-        </section>
+        <ProblemEditor
+          language={language}
+          monacoLanguage={monacoLanguage}
+          code={code}
+          runtime={runtime}
+          memory={memory}
+          status={status}
+          output={output}
+          running={running}
+          onLanguageChange={(nextLanguage) => setLanguage(nextLanguage)}
+          onCodeChange={(nextCode) => setCode(nextCode)}
+          onRun={() => void onRun()}
+          onSubmit={() => void onSubmit()}
+        />
       </div>
 
       <div className="xl:hidden space-y-4">
@@ -378,6 +402,12 @@ export default function ProblemWorkspace() {
               )}
             </div>
           </div>
+
+          {postSubmitInsight ? (
+            <div className="rounded-xl border border-[#1D4ED8]/30 bg-[#1D4ED8]/10 p-3 text-xs text-[#BFDBFE]">
+              {postSubmitInsight}
+            </div>
+          ) : null}
         </Card>
       </div>
     </div>

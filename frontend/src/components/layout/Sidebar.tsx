@@ -35,16 +35,14 @@ interface SidebarProps {
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
-      {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#3B82F6]/[0.02] via-transparent to-[#8B5CF6]/[0.02] pointer-events-none" />
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 h-20 border-b border-[#1F2937]/50">
-        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-[#6366F1] to-[#06B6D4] shadow-lg shadow-[#6366F1]/25">
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#1D4ED8]">
           <Cpu className="w-5 h-5 text-white" strokeWidth={2.2} />
         </div>
         <div>
           <span className="text-lg font-bold tracking-tight text-white">Prep</span>
-          <span className="text-lg font-bold tracking-tight gradient-text">IQ</span>
+          <span className="text-lg font-bold tracking-tight text-[#60A5FA]">IQ</span>
           <div className="flex items-center gap-1 -mt-0.5">
             <Wand2 className="w-3 h-3 text-[#06B6D4]" />
             <span className="text-[10px] text-[#9CA3AF] font-medium tracking-wider uppercase">
@@ -76,14 +74,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 {isActive && (
                   <motion.div
                     layoutId="sidebar-indicator"
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-8 rounded-r-full bg-gradient-to-b from-[#3B82F6] to-[#8B5CF6]"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-0.75 h-8 rounded-r-full bg-[#3B82F6]"
                     transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                   />
                 )}
 
                 <item.icon
                   className={clsx(
-                    'w-[18px] h-[18px] transition-colors',
+                    'w-4.5 h-4.5 transition-colors',
                     isActive ? 'text-[#3B82F6]' : 'text-[#9CA3AF] group-hover:text-[#E5E7EB]'
                   )}
                 />
@@ -91,7 +89,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
                 {/* Active glow */}
                 {isActive && (
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-[#3B82F6]/5 to-transparent pointer-events-none" />
+                  <div className="absolute inset-0 rounded-xl bg-linear-to-r from-[#3B82F6]/5 to-transparent pointer-events-none" />
                 )}
               </>
             )}
@@ -102,7 +100,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       {/* Bottom section */}
       <div className="px-4 py-5 border-t border-[#1F2937]/50">
         <div className="flex items-center gap-3 px-2">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#6366F1] to-[#06B6D4] flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-[#6366F1]/20">
+          <div className="w-9 h-9 rounded-full bg-[#1D4ED8] flex items-center justify-center text-white text-sm font-bold">
             A
           </div>
           <div className="flex-1 min-w-0">
@@ -118,7 +116,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   return (
     <>
-      <aside className="fixed left-0 top-0 bottom-0 w-[260px] bg-[#0B1120]/98 backdrop-blur-2xl border-r border-[#1F2937]/40 z-50 hidden lg:flex flex-col">
+      <aside className="fixed left-0 top-0 bottom-0 w-65 bg-[#0B1120]/98 backdrop-blur-2xl border-r border-[#1F2937]/40 z-50 hidden lg:flex flex-col">
         <SidebarContent />
       </aside>
 
@@ -138,7 +136,7 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -280, opacity: 0.5 }}
               transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-              className="fixed left-0 top-0 bottom-0 w-[260px] bg-[#0B1120] border-r border-[#1F2937]/60 z-50 flex flex-col lg:hidden"
+              className="fixed left-0 top-0 bottom-0 w-65 bg-[#0B1120] border-r border-[#1F2937]/60 z-50 flex flex-col lg:hidden"
             >
               <button
                 onClick={onClose}

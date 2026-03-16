@@ -1,20 +1,45 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BookOpenText, ExternalLink } from 'lucide-react';
+import { BookOpenText } from 'lucide-react';
 
+import { AuthRequiredCard } from '../components/auth/AuthRequiredCard';
+import { TutorialViewer } from '../components/tutorials/TutorialViewer';
 import { Card } from '../components/ui/Card';
-import { fetchTutorials } from '../services/api';
+import { useAuth } from '../context/useAuth';
+import { fetchRoadmap, fetchTutorials } from '../services/api';
 import type { TutorialItem } from '../types/coding';
 
 export default function Tutorials() {
+  const { isAuthenticated } = useAuth();
   const [tutorials, setTutorials] = useState<TutorialItem[]>([]);
+  const [roadmapDaysByTopic, setRoadmapDaysByTopic] = useState<Record<string, number>>({});
   const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     void (async () => {
-      const data = await fetchTutorials();
-      setTutorials(data);
+      setLoading(true);
+      try {
+        const [data, roadmap] = await Promise.all([
+          fetchTutorials(),
+          fetchRoadmap().catch(() => null),
+        ]);
+        setTutorials(data);
+
+        if (roadmap) {
+          const topicMap: Record<string, number> = {};
+          for (const day of roadmap.days) {
+            if (!(day.topic in topicMap)) {
+              topicMap[day.topic] = day.day_number;
+            }
+          }
+          setRoadmapDaysByTopic(topicMap);
+        }
+      } finally {
+        setLoading(false);
+      }
     })();
-  }, []);
+  }, [isAuthenticated]);
 
   const filtered = useMemo(
     () => tutorials.filter((item) => `${item.topic} ${item.title}`.toLowerCase().includes(query.toLowerCase())),
@@ -23,46 +48,54 @@ export default function Tutorials() {
 
   return (
     <div className="space-y-6">
-      <Card hover={false} className="space-y-3 border-[#1F2937] bg-[#0E1628]">
+      {!isAuthenticated ? (
+        <AuthRequiredCard
+          title="Login Required"
+          message="Sign in to view structured tutorials linked to your AI roadmap."
+        />
+      ) : null}
+
+      <Card hover={false} className="space-y-3 border-[#222A33] bg-[#151B22]">
         <div className="flex items-center gap-2">
           <BookOpenText className="h-5 w-5 text-[#3B82F6]" />
-          <h2 className="text-lg font-semibold text-[#E2E8F0]">Tutorial Library</h2>
+          <h2 className="text-lg font-semibold text-[#E2E8F0]">Tutorial Modules</h2>
         </div>
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search by topic"
-          className="h-11 w-full rounded-xl border border-[#1F2937] bg-[#0B1120] px-3 text-sm text-[#E2E8F0]"
+          placeholder="Search by topic, concept, or module"
+          className="h-11 w-full rounded-xl border border-[#222A33] bg-[#0B0F14] px-3 text-sm text-[#E2E8F0]"
         />
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {filtered.map((tutorial) => (
-          <Card key={tutorial.topic} hover={false} className="space-y-3 border-[#1F2937] bg-[#0E1628]">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-base font-semibold text-[#E2E8F0]">{tutorial.title}</h3>
-              <span className="rounded-full border border-[#334155] bg-[#0F172A] px-2.5 py-1 text-xs text-[#CBD5E1]">
-                {tutorial.topic}
-              </span>
-            </div>
-            <p className="text-sm text-[#CBD5E1]">{tutorial.concept}</p>
-            <p className="text-xs text-[#94A3B8]">Complexity: {tutorial.complexity}</p>
-            <pre className="overflow-x-auto rounded-xl border border-[#1F2937] bg-[#0B1120] p-3 text-xs text-[#BFDBFE]">
-              {tutorial.code_example}
-            </pre>
-            <p className="text-sm text-[#CBD5E1]">{tutorial.practice_tips}</p>
-            {tutorial.resource_link ? (
-              <a
-                href={tutorial.resource_link}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 text-sm font-semibold text-[#60A5FA] hover:text-[#93C5FD]"
-              >
-                Open Resource
-                <ExternalLink className="h-4 w-4" />
-              </a>
-            ) : null}
+      <div className="grid gap-4 xl:grid-cols-2">
+        {loading ? (
+          <Card hover={false} className="border-[#222A33] bg-[#151B22] text-sm text-[#94A3B8]">
+            Loading tutorials...
           </Card>
+        ) : null}
+
+        {!loading && filtered.length === 0 ? (
+          <Card hover={false} className="border-[#222A33] bg-[#151B22] text-sm text-[#94A3B8]">
+            No tutorial modules match your query.
+          </Card>
+        ) : null}
+
+        {filtered.map((tutorial) => (
+          <TutorialViewer
+            key={tutorial.topic}
+            tutorial={tutorial}
+            roadmapHint={
+              roadmapDaysByTopic[tutorial.topic]
+                ? { dayNumber: roadmapDaysByTopic[tutorial.topic] }
+                : undefined
+            }
+            practiceProblemLinks={[
+              { label: 'Beginner Problems', href: '/problems?difficulty=Easy' },
+              { label: 'Intermediate Problems', href: '/problems?difficulty=Medium' },
+              { label: 'Interview Problems', href: '/problems?difficulty=Hard' },
+            ]}
+          />
         ))}
       </div>
     </div>

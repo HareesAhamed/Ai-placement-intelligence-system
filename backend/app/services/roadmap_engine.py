@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm import Session
 
+from app.models.assessment import AssessmentAttempt
 from app.models.onboarding import OnboardingSurvey
 from app.models.problem import Problem
 from app.models.roadmap import RoadmapDay, RoadmapPlan
@@ -31,6 +32,11 @@ DEFAULT_TOPICS = [
 
 
 class RoadmapEngine:
+    def _normalized_weekly_hours(self, weekly_hours: int | None) -> int:
+        if not isinstance(weekly_hours, int):
+            return 8
+        return max(1, min(80, weekly_hours))
+
     def _topic_cycle(self, weak_topics: list[str]) -> list[str]:
         seen: set[str] = set()
         ordered: list[str] = []
@@ -64,6 +70,41 @@ class RoadmapEngine:
             "tutorial_title": f"{topic} Tutorial",
         }
 
+    def _assessment_topic_priority(self, db: Session, user_id: int) -> list[str]:
+        attempts = list(
+            db.scalars(
+                select(AssessmentAttempt)
+                .where(AssessmentAttempt.user_id == user_id)
+                .order_by(AssessmentAttempt.created_at.desc())
+            ).all()
+        )
+        if not attempts:
+            return []
+
+        topic_score: dict[str, float] = {}
+        topic_attempts: dict[str, int] = {}
+
+        for attempt in attempts[:50]:
+            problem = db.get(Problem, attempt.problem_id)
+            if not problem:
+                continue
+
+            topic = problem.topic
+            topic_attempts[topic] = topic_attempts.get(topic, 0) + 1
+
+            fail_weight = 0.0 if attempt.status == "Accepted" else 1.0
+            difficulty_weight = {
+                "Easy": 1.0,
+                "Medium": 1.4,
+                "Hard": 1.8,
+            }.get(problem.difficulty, 1.0)
+            coverage_penalty = 1.0 / max(1, topic_attempts[topic])
+
+            topic_score[topic] = topic_score.get(topic, 0.0) + (fail_weight * difficulty_weight) + coverage_penalty
+
+        ranked = sorted(topic_score.items(), key=lambda item: item[1], reverse=True)
+        return [topic for topic, _ in ranked if topic]
+
     def generate_initial_roadmap(self, db: Session, user: User) -> RoadmapPlan:
         survey = db.scalar(select(OnboardingSurvey).where(OnboardingSurvey.user_id == user.id))
         if not survey:
@@ -71,8 +112,11 @@ class RoadmapEngine:
 
         company_weights = company_engine.get_company_weights(db, survey.target_companies)
         weakness = weakness_engine.compute_topic_weakness(db, user.id, company_weights)
-        weak_topics = [item.topic for item in weakness[:6]]
+        behavior_topics = [item.topic for item in weakness[:6]]
+        assessment_topics = self._assessment_topic_priority(db, user.id)
+        weak_topics = [*assessment_topics[:5], *behavior_topics]
         topic_cycle = self._topic_cycle(weak_topics)
+        weekly_hours = self._normalized_weekly_hours(survey.weekly_study_hours)
 
         existing_plans = list(
             db.scalars(select(RoadmapPlan).where(RoadmapPlan.user_id == user.id, RoadmapPlan.is_active.is_(True))).all()
@@ -80,20 +124,24 @@ class RoadmapEngine:
         for plan in existing_plans:
             plan.is_active = False
 
+        feedback_chunks = ["Roadmap generated from your survey, coding behavior, and company focus."]
+        if assessment_topics:
+            feedback_chunks.append(f"Assessment signals prioritized: {', '.join(assessment_topics[:3])}.")
+
         plan = RoadmapPlan(
             user_id=user.id,
             start_date=date.today(),
             week_number=1,
             is_active=True,
             generated_reason="initial",
-            ai_feedback="Roadmap generated from your survey, current behavior, and company focus.",
+            ai_feedback=" ".join(feedback_chunks),
         )
         db.add(plan)
         db.flush()
 
         for day in range(1, 31):
             topic = topic_cycle[(day - 1) % len(topic_cycle)]
-            spec = self._build_day(day, topic, survey.weekly_study_hours)
+            spec = self._build_day(day, topic, weekly_hours)
             tutorial_link = self._pick_tutorial_link(db, topic)
             db.add(
                 RoadmapDay(
