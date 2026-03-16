@@ -27,7 +27,12 @@ class Settings(BaseSettings):
     contest_sync_hour_utc: int = 2
     connectors_user_agent: str = "PrepIQ/1.0"
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=False)
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
 
 @lru_cache

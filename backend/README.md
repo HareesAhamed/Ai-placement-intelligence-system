@@ -15,8 +15,8 @@ The execution image now includes C++, Java, Python, and JavaScript runtimes.
 
 ```bash
 python -m venv venv
-venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+venv\Scripts\activate
 uvicorn app.main:app --reload
 ```
 

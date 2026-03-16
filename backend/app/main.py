@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.background import BackgroundScheduler
+from sqlalchemy import text
 
 from app.config import get_cors_origins, get_settings
 from app.database import Base, SessionLocal, engine
@@ -38,6 +39,11 @@ app.add_middleware(
 def on_startup() -> None:
     # For local bootstrap; replace with Alembic migrations in deployment.
     Base.metadata.create_all(bind=engine)
+
+    # Backward-compatible patching for legacy databases that predate newer columns.
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE problems ADD COLUMN IF NOT EXISTS subtopic VARCHAR(128)"))
+        conn.execute(text("ALTER TABLE problems ADD COLUMN IF NOT EXISTS tutorial_link VARCHAR(1024)"))
 
     def sync_contests_job() -> None:
         db = SessionLocal()
