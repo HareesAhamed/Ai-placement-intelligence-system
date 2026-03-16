@@ -26,6 +26,26 @@ uvicorn app.main:app --reload
 docker compose up db -d
 ```
 
+## AI Roadmap Generation
+
+Roadmap generation now uses provider fallback in this order:
+
+1. Gemini
+2. Groq
+3. Rule-based deterministic planner
+
+Configure these in `.env`:
+
+```bash
+ROADMAP_AI_TIMEOUT_SECONDS=12
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-1.5-flash
+GROQ_API_KEY=
+GROQ_MODEL=llama-3.1-8b-instant
+```
+
+If no API keys are provided or providers fail, the app automatically uses rule-based generation.
+
 ## Core endpoints
 
 - `POST /auth/register`

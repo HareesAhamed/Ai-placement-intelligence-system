@@ -21,6 +21,8 @@ class RoadmapRead(BaseModel):
     start_date: date
     week_number: int
     generated_reason: str
+    ai_provider: str
+    generation_trace: str | None = None
     ai_feedback: str | None = None
     created_at: datetime
     days: list[RoadmapDayRead]

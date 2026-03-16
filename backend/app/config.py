@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     clist_api_key: str | None = None
     contest_sync_hour_utc: int = 2
     connectors_user_agent: str = "PrepIQ/1.0"
+    roadmap_ai_timeout_seconds: int = 12
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-1.5-flash"
+    groq_api_key: str | None = None
+    groq_model: str = "llama-3.1-8b-instant"
 
     model_config = SettingsConfigDict(
         env_file=".env",

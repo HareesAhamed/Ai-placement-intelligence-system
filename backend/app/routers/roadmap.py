@@ -17,6 +17,8 @@ def _to_response(plan) -> RoadmapRead:
         start_date=plan.start_date,
         week_number=plan.week_number,
         generated_reason=plan.generated_reason,
+        ai_provider=plan.ai_provider,
+        generation_trace=plan.generation_trace,
         ai_feedback=plan.ai_feedback,
         created_at=plan.created_at,
         days=[

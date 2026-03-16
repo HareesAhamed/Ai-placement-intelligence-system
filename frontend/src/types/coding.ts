@@ -166,6 +166,8 @@ export interface RoadmapPlan {
   start_date: string;
   week_number: number;
   generated_reason: string;
+  ai_provider: 'gemini' | 'groq' | 'rule-based' | string;
+  generation_trace: string | null;
   ai_feedback: string | null;
   created_at: string;
   days: RoadmapDay[];

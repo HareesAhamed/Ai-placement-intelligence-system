@@ -15,6 +15,8 @@ class RoadmapPlan(Base):
     week_number: Mapped[int] = mapped_column(Integer, default=1)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     generated_reason: Mapped[str] = mapped_column(String(64), default="initial")
+    ai_provider: Mapped[str] = mapped_column(String(64), default="rule-based")
+    generation_trace: Mapped[str | None] = mapped_column(Text, nullable=True)
     ai_feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

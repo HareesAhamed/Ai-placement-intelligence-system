@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import json
+from dataclasses import dataclass
 from datetime import date
+from typing import Callable
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
+from app.config import get_settings
 from app.models.assessment import AssessmentAttempt
 from app.models.onboarding import OnboardingSurvey
 from app.models.problem import Problem
@@ -31,7 +36,18 @@ DEFAULT_TOPICS = [
 ]
 
 
+@dataclass
+class StrategyResult:
+    provider: str
+    focus_topics: list[str]
+    feedback: str
+    generation_trace: str
+
+
 class RoadmapEngine:
+    def __init__(self) -> None:
+        self.settings = get_settings()
+
     def _normalized_weekly_hours(self, weekly_hours: int | None) -> int:
         if not isinstance(weekly_hours, int):
             return 8
@@ -105,6 +121,175 @@ class RoadmapEngine:
         ranked = sorted(topic_score.items(), key=lambda item: item[1], reverse=True)
         return [topic for topic, _ in ranked if topic]
 
+    def _sanitize_focus_topics(self, topics: list[str], weak_topics: list[str]) -> list[str]:
+        weak_lookup = {topic.lower(): topic for topic in weak_topics}
+        default_lookup = {topic.lower(): topic for topic in DEFAULT_TOPICS}
+
+        normalized: list[str] = []
+        seen: set[str] = set()
+        for raw_topic in topics:
+            key = raw_topic.strip().lower()
+            if not key:
+                continue
+            canonical = weak_lookup.get(key) or default_lookup.get(key)
+            if canonical and canonical not in seen:
+                normalized.append(canonical)
+                seen.add(canonical)
+        return normalized
+
+    def _build_ai_prompt(
+        self,
+        user: User,
+        survey: OnboardingSurvey,
+        weekly_hours: int,
+        weak_topics: list[str],
+        assessment_topics: list[str],
+        company_weights: dict[str, float],
+    ) -> str:
+        company_priority = sorted(company_weights.items(), key=lambda item: item[1], reverse=True)
+        weak_text = ", ".join(weak_topics[:10]) if weak_topics else "No strong weak signal yet"
+        assessment_text = ", ".join(assessment_topics[:5]) if assessment_topics else "No assessment attempts"
+        company_text = ", ".join(f"{topic}:{weight:.2f}" for topic, weight in company_priority[:8])
+        companies = ", ".join(survey.target_companies) if survey.target_companies else "General interview prep"
+
+        return (
+            "You are an interview prep roadmap planner. Return STRICT JSON only with keys: "
+            "focus_topics (array of 3 to 8 strings), rationale (string under 250 chars). "
+            "Do not include markdown, comments, or extra fields.\n\n"
+            f"User id: {user.id}\n"
+            f"Current year: {survey.current_year}\n"
+            f"Skill level: {survey.dsa_experience_level}\n"
+            f"Preferred language: {survey.preferred_language}\n"
+            f"Target companies: {companies}\n"
+            f"Weekly study hours: {weekly_hours}\n"
+            f"Goal timeline months: {survey.goal_timeline_months}\n"
+            f"Weak topics from behavior: {weak_text}\n"
+            f"Assessment weak topics: {assessment_text}\n"
+            f"Company topic weights: {company_text if company_text else 'N/A'}\n"
+            "Favor interview-relevant, weak, and company-priority topics first."
+        )
+
+    def _json_request(self, url: str, payload: dict[str, object], headers: dict[str, str]) -> dict[str, object]:
+        request = Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json", **headers},
+            method="POST",
+        )
+        timeout = max(3, self.settings.roadmap_ai_timeout_seconds)
+        with urlopen(request, timeout=timeout) as response:
+            raw = response.read().decode("utf-8")
+            return json.loads(raw)
+
+    def _extract_json_block(self, text: str) -> dict[str, object]:
+        stripped = text.strip()
+        if stripped.startswith("```"):
+            stripped = stripped.replace("```json", "").replace("```", "").strip()
+
+        start = stripped.find("{")
+        end = stripped.rfind("}")
+        if start == -1 or end == -1 or end <= start:
+            raise ValueError("Model response does not include JSON object")
+
+        return json.loads(stripped[start : end + 1])
+
+    def _call_gemini(self, prompt: str) -> dict[str, object]:
+        if not self.settings.gemini_api_key:
+            raise ValueError("Gemini API key missing")
+
+        url = (
+            "https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{self.settings.gemini_model}:generateContent?key={self.settings.gemini_api_key}"
+        )
+        response = self._json_request(
+            url,
+            payload={"contents": [{"parts": [{"text": prompt}]}]},
+            headers={},
+        )
+        candidates = response.get("candidates") or []
+        if not candidates:
+            raise ValueError("Gemini returned empty candidates")
+
+        parts = (((candidates[0] or {}).get("content") or {}).get("parts") or [])
+        text = "".join(str(part.get("text", "")) for part in parts)
+        return self._extract_json_block(text)
+
+    def _call_groq(self, prompt: str) -> dict[str, object]:
+        if not self.settings.groq_api_key:
+            raise ValueError("Groq API key missing")
+
+        response = self._json_request(
+            "https://api.groq.com/openai/v1/chat/completions",
+            payload={
+                "model": self.settings.groq_model,
+                "temperature": 0.2,
+                "messages": [
+                    {"role": "system", "content": "You produce strict JSON only."},
+                    {"role": "user", "content": prompt},
+                ],
+            },
+            headers={"Authorization": f"Bearer {self.settings.groq_api_key}"},
+        )
+        choices = response.get("choices") or []
+        if not choices:
+            raise ValueError("Groq returned empty choices")
+
+        content = (((choices[0] or {}).get("message") or {}).get("content") or "")
+        return self._extract_json_block(str(content))
+
+    def _derive_strategy(
+        self,
+        user: User,
+        survey: OnboardingSurvey,
+        weekly_hours: int,
+        weak_topics: list[str],
+        assessment_topics: list[str],
+        company_weights: dict[str, float],
+    ) -> StrategyResult:
+        prompt = self._build_ai_prompt(
+            user=user,
+            survey=survey,
+            weekly_hours=weekly_hours,
+            weak_topics=weak_topics,
+            assessment_topics=assessment_topics,
+            company_weights=company_weights,
+        )
+
+        providers: list[tuple[str, Callable[[str], dict[str, object]]]] = [
+            ("gemini", self._call_gemini),
+            ("groq", self._call_groq),
+        ]
+        failures: list[str] = []
+
+        for provider_name, provider_call in providers:
+            try:
+                payload = provider_call(prompt)
+                raw_topics = payload.get("focus_topics")
+                if not isinstance(raw_topics, list):
+                    raise ValueError("focus_topics must be an array")
+
+                clean_topics = self._sanitize_focus_topics([str(item) for item in raw_topics], weak_topics)
+                if not clean_topics:
+                    raise ValueError("No valid focus topics from provider")
+
+                rationale = str(payload.get("rationale") or "Roadmap personalized using AI topic prioritization.")
+                return StrategyResult(
+                    provider=provider_name,
+                    focus_topics=clean_topics,
+                    feedback=rationale[:280],
+                    generation_trace=f"{provider_name} succeeded",
+                )
+            except (ValueError, KeyError, HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+                failures.append(f"{provider_name}: {exc}")
+
+        fallback_topics = self._topic_cycle([*assessment_topics[:5], *weak_topics[:6]])[:8]
+        return StrategyResult(
+            provider="rule-based",
+            focus_topics=fallback_topics,
+            feedback="AI providers unavailable. Generated roadmap using behavior, assessment, and company-priority rules.",
+            generation_trace=" | ".join(failures) if failures else "No AI providers configured",
+        )
+
     def generate_initial_roadmap(self, db: Session, user: User) -> RoadmapPlan:
         survey = db.scalar(select(OnboardingSurvey).where(OnboardingSurvey.user_id == user.id))
         if not survey:
@@ -115,17 +300,26 @@ class RoadmapEngine:
         behavior_topics = [item.topic for item in weakness[:6]]
         assessment_topics = self._assessment_topic_priority(db, user.id)
         weak_topics = [*assessment_topics[:5], *behavior_topics]
-        topic_cycle = self._topic_cycle(weak_topics)
         weekly_hours = self._normalized_weekly_hours(survey.weekly_study_hours)
+
+        strategy = self._derive_strategy(
+            user=user,
+            survey=survey,
+            weekly_hours=weekly_hours,
+            weak_topics=weak_topics,
+            assessment_topics=assessment_topics,
+            company_weights=company_weights,
+        )
+        topic_cycle = self._topic_cycle(strategy.focus_topics)
 
         existing_plans = list(
             db.scalars(select(RoadmapPlan).where(RoadmapPlan.user_id == user.id, RoadmapPlan.is_active.is_(True))).all()
         )
-        for plan in existing_plans:
-            plan.is_active = False
+        for existing_plan in existing_plans:
+            existing_plan.is_active = False
 
-        feedback_chunks = ["Roadmap generated from your survey, coding behavior, and company focus."]
-        if assessment_topics:
+        feedback_chunks = [strategy.feedback]
+        if assessment_topics and strategy.provider == "rule-based":
             feedback_chunks.append(f"Assessment signals prioritized: {', '.join(assessment_topics[:3])}.")
 
         plan = RoadmapPlan(
@@ -134,6 +328,8 @@ class RoadmapEngine:
             week_number=1,
             is_active=True,
             generated_reason="initial",
+            ai_provider=strategy.provider,
+            generation_trace=strategy.generation_trace,
             ai_feedback=" ".join(feedback_chunks),
         )
         db.add(plan)
@@ -172,7 +368,7 @@ class RoadmapEngine:
 
         plan = self.generate_initial_roadmap(db, user)
         plan.generated_reason = "weekly-refresh"
-        plan.ai_feedback = " ".join(insights)
+        plan.ai_feedback = " ".join(insights) if insights else plan.ai_feedback
         db.commit()
         db.refresh(plan)
         return plan, insights

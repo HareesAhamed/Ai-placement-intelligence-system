@@ -58,6 +58,9 @@ def on_startup() -> None:
         conn.execute(text("UPDATE problems SET hints = COALESCE(hints, '[]'::json)"))
         conn.execute(text("UPDATE problems SET visible_testcases = COALESCE(visible_testcases, '[]'::json)"))
         conn.execute(text("UPDATE problems SET hidden_testcases = COALESCE(hidden_testcases, '[]'::json)"))
+        conn.execute(text("ALTER TABLE roadmap_plans ADD COLUMN IF NOT EXISTS ai_provider VARCHAR(64) DEFAULT 'rule-based'"))
+        conn.execute(text("ALTER TABLE roadmap_plans ADD COLUMN IF NOT EXISTS generation_trace TEXT"))
+        conn.execute(text("UPDATE roadmap_plans SET ai_provider = 'rule-based' WHERE ai_provider IS NULL"))
 
     def sync_contests_job() -> None:
         db = SessionLocal()

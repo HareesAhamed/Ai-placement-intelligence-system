@@ -26,6 +26,16 @@ function getTopicColor(topic: string): string {
   return topicColorMap[topic] ?? '#3B82F6';
 }
 
+function getProviderPresentation(provider: string): { label: string; className: string } {
+  if (provider === 'gemini') {
+    return { label: 'Gemini AI', className: 'border-[#0EA5E9]/30 bg-[#0EA5E9]/10 text-[#BAE6FD]' };
+  }
+  if (provider === 'groq') {
+    return { label: 'Groq Fallback', className: 'border-[#10B981]/30 bg-[#10B981]/10 text-[#BBF7D0]' };
+  }
+  return { label: 'Rule Based Fallback', className: 'border-[#F59E0B]/30 bg-[#F59E0B]/10 text-[#FDE68A]' };
+}
+
 export default function Roadmap() {
   const { isAuthenticated, openAuthModal } = useAuth();
   const [plan, setPlan] = useState<RoadmapPlan | null>(null);
@@ -106,6 +116,19 @@ export default function Roadmap() {
     return Math.round((completed / plan.days.length) * 100);
   }, [plan]);
 
+  const weeks = useMemo(() => {
+    if (!plan) return [] as Array<{ weekNumber: number; days: RoadmapPlan['days'] }>;
+    const grouped = new Map<number, RoadmapPlan['days']>();
+    for (const day of plan.days.slice().sort((a, b) => a.day_number - b.day_number)) {
+      const current = grouped.get(day.week_number) ?? [];
+      current.push(day);
+      grouped.set(day.week_number, current);
+    }
+    return Array.from(grouped.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([weekNumber, days]) => ({ weekNumber, days }));
+  }, [plan]);
+
   return (
     <div className="space-y-6">
       {!isAuthenticated ? (
@@ -142,14 +165,31 @@ export default function Roadmap() {
 
       {error ? <Card hover={false} className="border border-[#EF4444]/40 bg-[#7F1D1D]/20 text-sm text-[#FCA5A5]">{error}</Card> : null}
 
-      <Card hover={false} className="!p-5">
-        <ProgressBar
-          value={progress}
-          label="Roadmap Progress"
-          color={progress >= 70 ? 'green' : progress >= 40 ? 'yellow' : 'blue'}
-          size="lg"
-        />
-      </Card>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card hover={false} className="lg:col-span-2 p-5!">
+          <ProgressBar
+            value={progress}
+            label="Roadmap Progress"
+            color={progress >= 70 ? 'green' : progress >= 40 ? 'yellow' : 'blue'}
+            size="lg"
+          />
+        </Card>
+        <Card hover={false} className="p-5!">
+          <p className="text-xs text-[#94A3B8] uppercase tracking-wide">Generation Source</p>
+          {plan ? (
+            <>
+              <div className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${getProviderPresentation(plan.ai_provider).className}`}>
+                {getProviderPresentation(plan.ai_provider).label}
+              </div>
+              {plan.generation_trace ? (
+                <p className="mt-2 text-[11px] leading-relaxed text-[#94A3B8]">{plan.generation_trace}</p>
+              ) : null}
+            </>
+          ) : (
+            <p className="mt-2 text-sm text-[#94A3B8]">Generate roadmap to see AI source.</p>
+          )}
+        </Card>
+      </div>
 
       {insights.length > 0 ? (
         <Card hover={false} className="space-y-2 border-[#1F2937] bg-[#0E1628]">
@@ -164,62 +204,67 @@ export default function Roadmap() {
       ) : null}
 
       {plan ? (
-        <Card hover={false}>
-          <h3 className="text-sm font-semibold text-[#E5E7EB] mb-5">30-Day Plan</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-            {plan.days
-              .slice()
-              .sort((a, b) => a.day_number - b.day_number)
-              .map((day, index) => {
-                const color = getTopicColor(day.topic);
-                return (
-                  <motion.div
-                    key={day.id}
-                    initial={{ opacity: 0, scale: 0.92 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.01 }}
-                    whileHover={{ scale: 1.03, y: -2 }}
-                    onClick={() => {
-                      if (!day.is_completed) {
-                        void onCompleteDay(day.id);
-                      }
-                    }}
-                    className={`relative p-3.5 rounded-xl border cursor-pointer transition-all duration-200 ${
-                      day.is_completed
-                        ? 'bg-[#10B981]/10 border-[#10B981]/30'
-                        : 'bg-[#0B1120]/60 border-[#1F2937]/40 hover:border-[#3B82F6]/30'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-bold text-[#9CA3AF] uppercase">Day {day.day_number}</span>
-                      {day.is_completed ? (
-                        <CircleCheckBig className="w-3.5 h-3.5 text-[#10B981]" />
-                      ) : (
-                        <CircleDashed className="w-3.5 h-3.5 text-[#9CA3AF]/30" />
-                      )}
-                    </div>
-                    <p className="text-xs font-medium truncate" style={{ color }}>
-                      {day.topic}
-                    </p>
-                    <p className="text-[10px] text-[#9CA3AF] mt-1">
-                      {day.task_type === 'weekly-review' ? 'Weekly Review' : `${day.problems_count} problems`}
-                    </p>
-                    {day.tutorial_link ? (
-                      <a
-                        href={day.tutorial_link}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(event) => event.stopPropagation()}
-                        className="mt-2 block text-[10px] text-[#60A5FA] underline underline-offset-2"
-                      >
-                        Tutorial
-                      </a>
-                    ) : null}
-                  </motion.div>
-                );
-              })}
-          </div>
-        </Card>
+        <div className="space-y-4">
+          {weeks.map((week) => (
+            <Card key={week.weekNumber} hover={false}>
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-[#E5E7EB]">Week {week.weekNumber}</h3>
+                <span className="rounded-full border border-[#1E3A8A]/40 bg-[#1E3A8A]/20 px-2 py-0.5 text-[10px] font-semibold text-[#BFDBFE]">
+                  {week.days.filter((day) => day.is_completed).length}/{week.days.length} done
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {week.days.map((day, index) => {
+                  const color = getTopicColor(day.topic);
+                  return (
+                    <motion.div
+                      key={day.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.02 }}
+                      whileHover={{ y: -2 }}
+                      onClick={() => {
+                        if (!day.is_completed) {
+                          void onCompleteDay(day.id);
+                        }
+                      }}
+                      className={`relative rounded-xl border p-4 transition-all duration-200 ${
+                        day.is_completed
+                          ? 'cursor-default border-[#10B981]/30 bg-[#10B981]/10'
+                          : 'cursor-pointer border-[#1F2937]/50 bg-[#0B1120]/70 hover:border-[#3B82F6]/40'
+                      }`}
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase text-[#9CA3AF]">Day {day.day_number}</span>
+                        {day.is_completed ? (
+                          <CircleCheckBig className="h-3.5 w-3.5 text-[#10B981]" />
+                        ) : (
+                          <CircleDashed className="h-3.5 w-3.5 text-[#64748B]" />
+                        )}
+                      </div>
+                      <p className="text-sm font-semibold" style={{ color }}>{day.topic}</p>
+                      <p className="mt-1 text-xs text-[#9CA3AF]">
+                        {day.task_type === 'weekly-review' ? 'Weekly Review + Mock Interview' : `${day.problems_count} problems`}
+                      </p>
+                      <p className="mt-1 text-xs text-[#94A3B8]">{day.estimated_minutes} min block</p>
+                      {day.tutorial_link ? (
+                        <a
+                          href={day.tutorial_link}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          className="mt-2 inline-block text-xs text-[#60A5FA] underline underline-offset-2"
+                        >
+                          Open Tutorial
+                        </a>
+                      ) : null}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </Card>
+          ))}
+        </div>
       ) : (
         <Card hover={false} className="text-sm text-[#94A3B8]">
           {loading ? 'Loading roadmap...' : 'No roadmap found. Generate your personalized roadmap to begin.'}
