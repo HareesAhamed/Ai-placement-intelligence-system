@@ -190,4 +190,31 @@ export interface TutorialItem {
   complexity: string;
   practice_tips: string;
   resource_link: string | null;
+  video_links: string[];
+  article_snippets: Array<{ title: string; language: string; code: string }>;
+}
+
+export interface MockTestProblemItem {
+  id: number;
+  title: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard' | string;
+  topic: string;
+}
+
+export interface MockTestStartResponse {
+  mode: 'pattern' | 'company' | 'overall';
+  category: string | null;
+  started_at: string;
+  problems: MockTestProblemItem[];
+}
+
+export interface MockTestEvaluateResponse {
+  mode: 'pattern' | 'company' | 'overall';
+  category: string | null;
+  score: number;
+  solved_count: number;
+  total_questions: number;
+  time_taken_minutes: number;
+  strengths: string[];
+  weaknesses: string[];
 }

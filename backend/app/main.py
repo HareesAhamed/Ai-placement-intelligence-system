@@ -12,6 +12,7 @@ from app.routers import (
     auth,
     contests,
     execution,
+    mock_tests,
     platform_connectors,
     problems,
     roadmap,
@@ -61,6 +62,10 @@ def on_startup() -> None:
         conn.execute(text("ALTER TABLE roadmap_plans ADD COLUMN IF NOT EXISTS ai_provider VARCHAR(64) DEFAULT 'rule-based'"))
         conn.execute(text("ALTER TABLE roadmap_plans ADD COLUMN IF NOT EXISTS generation_trace TEXT"))
         conn.execute(text("UPDATE roadmap_plans SET ai_provider = 'rule-based' WHERE ai_provider IS NULL"))
+        conn.execute(text("ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS video_links JSON"))
+        conn.execute(text("ALTER TABLE tutorials ADD COLUMN IF NOT EXISTS article_snippets JSON"))
+        conn.execute(text("UPDATE tutorials SET video_links = COALESCE(video_links, '[]'::json)"))
+        conn.execute(text("UPDATE tutorials SET article_snippets = COALESCE(article_snippets, '[]'::json)"))
 
     def sync_contests_job() -> None:
         db = SessionLocal()
@@ -97,3 +102,4 @@ app.include_router(assessment.router)
 app.include_router(roadmap.router)
 app.include_router(analytics.router)
 app.include_router(tutorials.router)
+app.include_router(mock_tests.router)

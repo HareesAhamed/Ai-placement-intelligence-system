@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Search, Shield } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { ProblemTable } from '../components/problems/ProblemTable';
 import { Card } from '../components/ui/Card';
@@ -11,18 +11,28 @@ import type { ProblemListItem } from '../types/coding';
 const PAGE_SIZE = 12;
 
 export default function Problems() {
-  const [tab, setTab] = useState<'all' | 'premium'>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'premium' ? 'premium' : 'all';
+  const initialCompany = searchParams.get('company') ?? 'all';
+  const initialTopic = searchParams.get('topic') ?? 'all';
+  const initialStatus = searchParams.get('status') ?? 'all';
+  const initialDifficulty = searchParams.get('difficulty') ?? 'all';
+  const initialRoadmap = searchParams.get('roadmap') === 'roadmap' ? 'roadmap' : 'all';
+  const initialSearch = searchParams.get('search') ?? '';
+  const initialPage = Math.max(1, Number(searchParams.get('page') ?? '1') || 1);
+
+  const [tab, setTab] = useState<'all' | 'premium'>(initialTab);
   const [problems, setProblems] = useState<ProblemListItem[]>([]);
   const [allOptionsData, setAllOptionsData] = useState<ProblemListItem[]>([]);
   const [roadmapTags, setRoadmapTags] = useState<Record<number, Array<{ dayNumber: number; topic: string }>>>({});
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [company, setCompany] = useState('all');
-  const [topic, setTopic] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [difficulty, setDifficulty] = useState('all');
-  const [roadmapFilter, setRoadmapFilter] = useState('all');
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState(initialSearch);
+  const [company, setCompany] = useState(initialCompany);
+  const [topic, setTopic] = useState(initialTopic);
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [difficulty, setDifficulty] = useState(initialDifficulty);
+  const [roadmapFilter, setRoadmapFilter] = useState(initialRoadmap);
+  const [page, setPage] = useState(initialPage);
   const [bookmarkBusyId, setBookmarkBusyId] = useState<number | null>(null);
   const [analyticsSnapshot, setAnalyticsSnapshot] = useState<{ accuracy: number; attempt_count: number; roadmap_completion: number } | null>(null);
 
@@ -77,6 +87,19 @@ export default function Problems() {
   useEffect(() => {
     setPage(1);
   }, [tab, company, topic, statusFilter, difficulty, roadmapFilter, search]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (tab !== 'all') params.set('tab', tab);
+    if (company !== 'all') params.set('company', company);
+    if (topic !== 'all') params.set('topic', topic);
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (difficulty !== 'all') params.set('difficulty', difficulty);
+    if (roadmapFilter !== 'all') params.set('roadmap', roadmapFilter);
+    if (search.trim()) params.set('search', search.trim());
+    if (page > 1) params.set('page', String(page));
+    setSearchParams(params, { replace: true });
+  }, [tab, company, topic, statusFilter, difficulty, roadmapFilter, search, page, setSearchParams]);
 
   const filteredRows = useMemo(() => {
     if (roadmapFilter !== 'roadmap') return problems;

@@ -9,3 +9,5 @@ class TutorialRead(BaseModel):
     complexity: str
     practice_tips: str
     resource_link: str | None = None
+    video_links: list[str] = []
+    article_snippets: list[dict[str, str]] = []

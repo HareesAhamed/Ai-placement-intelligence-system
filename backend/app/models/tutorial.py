@@ -1,4 +1,4 @@
-from sqlalchemy import String, Text
+from sqlalchemy import JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -15,3 +15,5 @@ class Tutorial(Base):
     complexity: Mapped[str] = mapped_column(String(128), nullable=False)
     practice_tips: Mapped[str] = mapped_column(Text, nullable=False)
     resource_link: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    video_links: Mapped[list[str]] = mapped_column(JSON, default=list)
+    article_snippets: Mapped[list[dict[str, str]]] = mapped_column(JSON, default=list)

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { BookOpenText, RefreshCw } from 'lucide-react';
 
 import { AuthRequiredCard } from '../components/auth/AuthRequiredCard';
@@ -10,9 +11,10 @@ import type { TutorialItem } from '../types/coding';
 
 export default function Tutorials() {
   const { isAuthenticated } = useAuth();
+  const [searchParams] = useSearchParams();
   const [tutorials, setTutorials] = useState<TutorialItem[]>([]);
   const [roadmapDaysByTopic, setRoadmapDaysByTopic] = useState<Record<string, number>>({});
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(searchParams.get('topic') ?? '');
   const [loading, setLoading] = useState(false);
   const [snapshot, setSnapshot] = useState<{ accuracy: number; attempt_count: number; roadmap_completion: number } | null>(null);
 
@@ -41,6 +43,13 @@ export default function Tutorials() {
       }
     })();
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    const topic = searchParams.get('topic');
+    if (topic) {
+      setQuery(topic);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!isAuthenticated) return;

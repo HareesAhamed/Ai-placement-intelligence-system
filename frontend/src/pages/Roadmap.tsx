@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Route, CircleCheckBig, CircleDashed, RotateCw, Sparkles } from 'lucide-react';
 
@@ -7,7 +8,7 @@ import { Card } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { useAuth } from '../context/useAuth';
-import { fetchRoadmap, generateRoadmap, refreshRoadmap } from '../services/api';
+import { fetchProblems, fetchRoadmap, generateRoadmap, refreshRoadmap } from '../services/api';
 import type { RoadmapPlan } from '../types/coding';
 
 const topicColorMap: Record<string, string> = {
@@ -37,11 +38,14 @@ function getProviderPresentation(provider: string): { label: string; className: 
 }
 
 export default function Roadmap() {
+  const navigate = useNavigate();
   const { isAuthenticated, openAuthModal } = useAuth();
   const [plan, setPlan] = useState<RoadmapPlan | null>(null);
   const [insights, setInsights] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDayId, setSelectedDayId] = useState<number | null>(null);
+  const [launchingTask, setLaunchingTask] = useState(false);
 
   const loadRoadmap = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -116,6 +120,37 @@ export default function Roadmap() {
       .sort((a, b) => a[0] - b[0])
       .map(([weekNumber, days]) => ({ weekNumber, days }));
   }, [plan]);
+
+  const selectedDay = useMemo(() => {
+    if (!plan || selectedDayId == null) return null;
+    return plan.days.find((day) => day.id === selectedDayId) ?? null;
+  }, [plan, selectedDayId]);
+
+  const onStartTaskInCompiler = async (topic: string, dayNumber: number) => {
+    if (!isAuthenticated) {
+      openAuthModal('login');
+      return;
+    }
+
+    setLaunchingTask(true);
+    try {
+      const unsolved = await fetchProblems({
+        topic,
+        status: 'unsolved',
+        page: 1,
+        page_size: 1,
+      }).catch(() => []);
+      const first = unsolved[0] ?? (await fetchProblems({ topic, page: 1, page_size: 1 }).catch(() => []))[0];
+
+      if (first) {
+        navigate(`/problems/${first.id}?roadmapDay=${dayNumber}&source=roadmap`);
+      } else {
+        navigate(`/problems?roadmap=roadmap&topic=${encodeURIComponent(topic)}`);
+      }
+    } finally {
+      setLaunchingTask(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -205,16 +240,20 @@ export default function Roadmap() {
                 {week.days.map((day, index) => {
                   const color = getTopicColor(day.topic);
                   return (
-                    <motion.div
+                    <motion.button
+                      type="button"
                       key={day.id}
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.02 }}
                       whileHover={{ y: -2 }}
+                      onClick={() => setSelectedDayId(day.id)}
                       className={`relative rounded-xl border p-4 transition-all duration-200 ${
                         day.is_completed
                           ? 'cursor-default border-[#10B981]/30 bg-[#10B981]/10'
                           : 'border-[#1F2937]/50 bg-[#0B1120]/70 hover:border-[#3B82F6]/40'
+                      } ${
+                        selectedDayId === day.id ? 'ring-1 ring-[#3B82F6]/60' : ''
                       }`}
                     >
                       <div className="mb-2 flex items-center justify-between">
@@ -230,23 +269,71 @@ export default function Roadmap() {
                         {day.task_type === 'weekly-review' ? 'Weekly Review + Mock Interview' : `${day.problems_count} problems`}
                       </p>
                       <p className="mt-1 text-xs text-[#94A3B8]">{day.estimated_minutes} min block</p>
-                      {day.tutorial_link ? (
-                        <a
-                          href={day.tutorial_link}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(event) => event.stopPropagation()}
-                          className="mt-2 inline-block text-xs text-[#60A5FA] underline underline-offset-2"
-                        >
-                          Open Tutorial
-                        </a>
-                      ) : null}
-                    </motion.div>
+                      <p className="mt-2 text-xs text-[#60A5FA]">Click card to do task</p>
+                    </motion.button>
                   );
                 })}
               </div>
             </Card>
           ))}
+
+          {selectedDay ? (
+            <Card hover={false} className="border-[#1D4ED8]/30 bg-[#0E1628]">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-[#93C5FD]">Selected Task</p>
+                  <h3 className="text-sm font-semibold text-[#E2E8F0]">
+                    Day {selectedDay.day_number} • {selectedDay.topic}
+                  </h3>
+                  <p className="text-xs text-[#94A3B8]">
+                    {selectedDay.task_type === 'weekly-review' ? 'Weekly review and mock interview block' : `Practice ${selectedDay.problems_count} problem(s)`} • {selectedDay.estimated_minutes} min
+                  </p>
+                </div>
+                {selectedDay.is_completed ? (
+                  <span className="rounded-full border border-[#10B981]/30 bg-[#10B981]/15 px-2.5 py-1 text-xs font-semibold text-[#86EFAC]">
+                    Auto-completed from accepted submissions
+                  </span>
+                ) : (
+                  <span className="rounded-full border border-[#F59E0B]/30 bg-[#F59E0B]/15 px-2.5 py-1 text-xs font-semibold text-[#FCD34D]">
+                    Pending
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => void onStartTaskInCompiler(selectedDay.topic, selectedDay.day_number)}
+                  disabled={launchingTask}
+                  className="rounded-lg bg-[#1D4ED8] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                >
+                  {launchingTask ? 'Opening Compiler...' : 'Do Task In Compiler'}
+                </button>
+                <Link
+                  to={`/tutorials?topic=${encodeURIComponent(selectedDay.topic)}`}
+                  className="rounded-lg bg-[#2563EB] px-3 py-2 text-xs font-semibold text-white"
+                >
+                  Do Tutorial
+                </Link>
+                <Link
+                  to={`/problems?topic=${encodeURIComponent(selectedDay.topic)}`}
+                  className="rounded-lg border border-[#334155] bg-[#111827] px-3 py-2 text-xs font-semibold text-[#E2E8F0]"
+                >
+                  Practice Problems
+                </Link>
+                {selectedDay.tutorial_link ? (
+                  <a
+                    href={selectedDay.tutorial_link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-lg border border-[#334155] bg-[#111827] px-3 py-2 text-xs font-semibold text-[#93C5FD]"
+                  >
+                    External Resource
+                  </a>
+                ) : null}
+              </div>
+            </Card>
+          ) : null}
         </div>
       ) : (
         <Card hover={false} className="text-sm text-[#94A3B8]">

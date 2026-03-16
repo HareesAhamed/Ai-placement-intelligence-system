@@ -79,7 +79,7 @@ export function AuthModal() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={closeAuthModal}
-            className="fixed inset-0 z-[120] bg-[#020617]/75 backdrop-blur-md"
+            className="fixed inset-0 z-120 bg-[#020617]/75 backdrop-blur-md"
             aria-label="Close auth dialog"
           />
           <motion.div
@@ -87,9 +87,9 @@ export function AuthModal() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={{ duration: 0.25 }}
-            className="fixed left-1/2 top-1/2 z-[121] w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-[#1F2937]/80 bg-[#0B1120]/95 shadow-2xl shadow-black/40"
+            className="fixed left-1/2 top-1/2 z-121 w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-[#1F2937]/80 bg-[#0B1120]/95 shadow-2xl shadow-black/40"
           >
-            <div className="relative border-b border-[#1F2937]/60 bg-gradient-to-r from-[#1D4ED8]/15 via-transparent to-[#0EA5E9]/10 px-5 py-4">
+            <div className="relative border-b border-[#1F2937]/60 bg-linear-to-r from-[#1D4ED8]/15 via-transparent to-[#0EA5E9]/10 px-5 py-4">
               <button
                 onClick={closeAuthModal}
                 className="absolute right-4 top-4 rounded-lg border border-[#1F2937] bg-[#0F172A] p-1.5 text-[#9CA3AF] hover:text-[#E5E7EB]"
@@ -179,7 +179,7 @@ export function AuthModal() {
               <button
                 disabled={submitting}
                 type="submit"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#0EA5E9] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#1D4ED8]/30 transition hover:from-[#1D4ED8] hover:to-[#0284C7] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-[#2563EB] to-[#0EA5E9] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#1D4ED8]/30 transition hover:from-[#1D4ED8] hover:to-[#0284C7] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {authMode === 'login' ? <LogIn className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
                 {submitting ? 'Please wait...' : authMode === 'login' ? 'Login' : 'Register'}

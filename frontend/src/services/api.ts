@@ -21,6 +21,8 @@ import type {
   SurveyResponse,
   TopicStrength,
   TutorialItem,
+  MockTestStartResponse,
+  MockTestEvaluateResponse,
 } from '../types/coding';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
@@ -269,5 +271,29 @@ export async function fetchTutorials(): Promise<TutorialItem[]> {
 
 export async function fetchTutorial(topic: string): Promise<TutorialItem> {
   const res = await api.get<TutorialItem>(`/tutorials/${topic}`);
+  return res.data;
+}
+
+export async function fetchMockTestCategories(): Promise<{ pattern_categories: string[]; company_categories: string[] }> {
+  const res = await api.get<{ pattern_categories: string[]; company_categories: string[] }>('/mock-tests/categories');
+  return res.data;
+}
+
+export async function startMockTest(payload: {
+  mode: 'pattern' | 'company' | 'overall';
+  category?: string;
+  question_count?: number;
+}): Promise<MockTestStartResponse> {
+  const res = await api.post<MockTestStartResponse>('/mock-tests/start', payload);
+  return res.data;
+}
+
+export async function evaluateMockTest(payload: {
+  mode: 'pattern' | 'company' | 'overall';
+  category?: string;
+  started_at: string;
+  problem_ids: number[];
+}): Promise<MockTestEvaluateResponse> {
+  const res = await api.post<MockTestEvaluateResponse>('/mock-tests/evaluate', payload);
   return res.data;
 }

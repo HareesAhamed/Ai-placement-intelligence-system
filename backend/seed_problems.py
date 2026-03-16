@@ -354,6 +354,17 @@ TUTORIALS = [
         "complexity": "Access: O(1), Search: O(n)",
         "practice_tips": "Master prefix sums, sliding window, and two-pointer transformations.",
         "resource_link": "https://takeuforward.org/arrays/",
+        "video_links": [
+            "https://www.youtube.com/watch?v=37E9ckMDdTk",
+            "https://www.youtube.com/watch?v=Jg4E4K5M1f8",
+        ],
+        "article_snippets": [
+            {
+                "title": "Prefix Sum Pattern",
+                "language": "python",
+                "code": "def prefix_sum(nums):\n    pref = [0]\n    for x in nums:\n        pref.append(pref[-1] + x)\n    return pref",
+            }
+        ],
     },
     {
         "topic": "Strings",
@@ -363,6 +374,17 @@ TUTORIALS = [
         "complexity": "Traversal: O(n)",
         "practice_tips": "Practice anagram checks, palindrome variants, and substring windows.",
         "resource_link": "https://takeuforward.org/strings/",
+        "video_links": [
+            "https://www.youtube.com/watch?v=4T7iM3K5n9s",
+            "https://www.youtube.com/watch?v=0n7x4A2k8R8",
+        ],
+        "article_snippets": [
+            {
+                "title": "Frequency Counter",
+                "language": "python",
+                "code": "from collections import Counter\n\ndef is_anagram(a, b):\n    return Counter(a) == Counter(b)",
+            }
+        ],
     },
     {
         "topic": "Recursion",
@@ -372,6 +394,16 @@ TUTORIALS = [
         "complexity": "Depends on branching; optimize with memoization.",
         "practice_tips": "Trace call stacks by hand and identify overlapping subproblems.",
         "resource_link": "https://takeuforward.org/recursion/",
+        "video_links": [
+            "https://www.youtube.com/watch?v=IJDJ0kBx2LM",
+        ],
+        "article_snippets": [
+            {
+                "title": "Backtracking Template",
+                "language": "python",
+                "code": "def backtrack(path, choices):\n    if goal(path):\n        output(path)\n        return\n    for c in choices:\n        path.append(c)\n        backtrack(path, choices)\n        path.pop()",
+            }
+        ],
     },
     {
         "topic": "Binary Search",
@@ -381,6 +413,17 @@ TUTORIALS = [
         "complexity": "O(log n)",
         "practice_tips": "Learn first/last occurrence and answer-space binary search.",
         "resource_link": "https://takeuforward.org/binary-search/",
+        "video_links": [
+            "https://www.youtube.com/watch?v=Y4Vj3ywV1xY",
+            "https://www.youtube.com/watch?v=QSPwI2jaWkI",
+        ],
+        "article_snippets": [
+            {
+                "title": "Lower Bound",
+                "language": "python",
+                "code": "def lower_bound(nums, target):\n    l, r = 0, len(nums)\n    while l < r:\n        m = (l + r) // 2\n        if nums[m] < target:\n            l = m + 1\n        else:\n            r = m\n    return l",
+            }
+        ],
     },
     {
         "topic": "Dynamic Programming",
@@ -390,6 +433,56 @@ TUTORIALS = [
         "complexity": "State dependent",
         "practice_tips": "Always define state, transition, and base cases explicitly.",
         "resource_link": "https://takeuforward.org/dynamic-programming/",
+        "video_links": [
+            "https://www.youtube.com/watch?v=tyB0ztf0DNY",
+            "https://www.youtube.com/watch?v=oBt53YbR9Kk",
+        ],
+        "article_snippets": [
+            {
+                "title": "1D DP Scaffold",
+                "language": "python",
+                "code": "def solve(n):\n    dp = [0] * (n + 1)\n    dp[0] = 1\n    for i in range(1, n + 1):\n        dp[i] = dp[i - 1]\n        if i > 1:\n            dp[i] += dp[i - 2]\n    return dp[n]",
+            }
+        ],
+    },
+    {
+        "topic": "Trees",
+        "title": "Trees Basics and Traversals",
+        "concept": "Trees are hierarchical structures; traversal order defines many problem solutions.",
+        "code_example": "def inorder(root):\n    if not root:\n        return\n    inorder(root.left)\n    print(root.val)\n    inorder(root.right)",
+        "complexity": "Traversal O(n)",
+        "practice_tips": "Practice recursion and iterative stack/queue traversals.",
+        "resource_link": "https://takeuforward.org/data-structure/tree-data-structure/",
+        "video_links": [
+            "https://www.youtube.com/watch?v=_ANrF3FJm7I",
+        ],
+        "article_snippets": [
+            {
+                "title": "Level Order BFS",
+                "language": "python",
+                "code": "from collections import deque\n\ndef level_order(root):\n    if not root:\n        return []\n    q, ans = deque([root]), []\n    while q:\n        node = q.popleft()\n        ans.append(node.val)\n        if node.left: q.append(node.left)\n        if node.right: q.append(node.right)\n    return ans",
+            }
+        ],
+    },
+    {
+        "topic": "Graphs",
+        "title": "Graphs Foundation",
+        "concept": "Graph traversal with BFS/DFS is central to connectivity and shortest path reasoning.",
+        "code_example": "def dfs(graph, node, seen):\n    seen.add(node)\n    for nxt in graph[node]:\n        if nxt not in seen:\n            dfs(graph, nxt, seen)",
+        "complexity": "O(V + E)",
+        "practice_tips": "Master adjacency list representation and visited handling.",
+        "resource_link": "https://takeuforward.org/graph/graph-data-structure-and-algorithms/",
+        "video_links": [
+            "https://www.youtube.com/watch?v=tWVWeAqZ0WU",
+            "https://www.youtube.com/watch?v=pcKY4hjDrxk",
+        ],
+        "article_snippets": [
+            {
+                "title": "BFS Template",
+                "language": "python",
+                "code": "from collections import deque\n\ndef bfs(graph, src):\n    q, seen = deque([src]), {src}\n    while q:\n        node = q.popleft()\n        for nxt in graph[node]:\n            if nxt not in seen:\n                seen.add(nxt)\n                q.append(nxt)",
+            }
+        ],
     },
 ]
 
@@ -418,13 +511,22 @@ def seed():
         else:
             print(f"Database already has {existing_patterns} company patterns. Skipping pattern insert.")
 
-        existing_tutorials = db.query(Tutorial).count()
-        if existing_tutorials == 0:
-            for row in TUTORIALS:
+        tutorial_upserts = 0
+        for row in TUTORIALS:
+            existing = db.query(Tutorial).filter(Tutorial.topic == row["topic"]).first()
+            if existing:
+                existing.title = row["title"]
+                existing.concept = row["concept"]
+                existing.code_example = row["code_example"]
+                existing.complexity = row["complexity"]
+                existing.practice_tips = row["practice_tips"]
+                existing.resource_link = row["resource_link"]
+                existing.video_links = row.get("video_links", [])
+                existing.article_snippets = row.get("article_snippets", [])
+            else:
                 db.add(Tutorial(**row))
-            print(f"Prepared {len(TUTORIALS)} tutorials for insert.")
-        else:
-            print(f"Database already has {existing_tutorials} tutorials. Skipping tutorial insert.")
+            tutorial_upserts += 1
+        print(f"Prepared {tutorial_upserts} tutorials for upsert.")
 
         db.commit()
         print("Seeding complete.")

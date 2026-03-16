@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, BarChart, Bar,
@@ -15,14 +16,18 @@ import { useAuth } from '../context/useAuth';
 import {
   fetchAnalyticsSummary,
   fetchCompanyReadiness,
+  fetchProblems,
   fetchProgressAnalytics,
+  fetchRoadmap,
   fetchSubmissions,
   fetchTopicStrength,
 } from '../services/api';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { isAuthenticated, openAuthModal } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [resumingRoadmap, setResumingRoadmap] = useState(false);
   const [summary, setSummary] = useState<{ accuracy: number; attempt_count: number; avg_runtime_ms: number; difficulty_distribution: Record<string, number> } | null>(null);
   const [progress, setProgress] = useState<{ roadmap_completion: number; consistency: Array<{ date: string; attempts: number }> } | null>(null);
   const [topicStrength, setTopicStrength] = useState<Array<{ topic: string; attempts: number; accuracy: number; classification: string }>>([]);
@@ -93,6 +98,53 @@ export default function Dashboard() {
     show: { opacity: 1, y: 0 },
   };
 
+  const onResumeRoadmap = useCallback(async () => {
+    if (!isAuthenticated) {
+      openAuthModal('login');
+      return;
+    }
+    setResumingRoadmap(true);
+    try {
+      const roadmap = await fetchRoadmap().catch(() => null);
+      if (!roadmap || roadmap.days.length === 0) {
+        navigate('/roadmap');
+        return;
+      }
+
+      const nextRemaining = roadmap.days
+        .slice()
+        .sort((a, b) => a.day_number - b.day_number)
+        .find((day) => !day.is_completed && day.task_type !== 'weekly-review')
+        ?? roadmap.days.slice().sort((a, b) => a.day_number - b.day_number).find((day) => !day.is_completed);
+
+      if (!nextRemaining) {
+        navigate('/roadmap');
+        return;
+      }
+
+      const unsolved = await fetchProblems({
+        topic: nextRemaining.topic,
+        status: 'unsolved',
+        page: 1,
+        page_size: 1,
+      }).catch(() => []);
+
+      const first = unsolved[0] ?? (await fetchProblems({
+        topic: nextRemaining.topic,
+        page: 1,
+        page_size: 1,
+      }).catch(() => []))[0];
+
+      if (first) {
+        navigate(`/problems/${first.id}?roadmapDay=${nextRemaining.day_number}&source=roadmap`);
+      } else {
+        navigate(`/problems?roadmap=roadmap&topic=${encodeURIComponent(nextRemaining.topic)}`);
+      }
+    } finally {
+      setResumingRoadmap(false);
+    }
+  }, [isAuthenticated, navigate, openAuthModal]);
+
   return (
     <motion.div
       variants={staggerContainer}
@@ -108,20 +160,29 @@ export default function Dashboard() {
       ) : null}
 
       <div className="flex justify-end">
-        <button
-          onClick={() => {
-            if (!isAuthenticated) {
-              openAuthModal('login');
-              return;
-            }
-            void refreshDashboard();
-          }}
-          disabled={loading}
-          className="inline-flex items-center gap-2 rounded-lg border border-[#1F2937] bg-[#111827] px-3 py-2 text-xs font-semibold text-[#E5E7EB] disabled:opacity-60"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          Refresh Analytics
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => void onResumeRoadmap()}
+            disabled={resumingRoadmap}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#1D4ED8] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+          >
+            {resumingRoadmap ? 'Opening...' : 'Resume Roadmap'}
+          </button>
+          <button
+            onClick={() => {
+              if (!isAuthenticated) {
+                openAuthModal('login');
+                return;
+              }
+              void refreshDashboard();
+            }}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-lg border border-[#1F2937] bg-[#111827] px-3 py-2 text-xs font-semibold text-[#E5E7EB] disabled:opacity-60"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Refresh Analytics
+          </button>
+        </div>
       </div>
 
       {/* Top Stats Row */}
