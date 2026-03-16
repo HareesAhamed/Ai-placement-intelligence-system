@@ -42,8 +42,22 @@ def on_startup() -> None:
 
     # Backward-compatible patching for legacy databases that predate newer columns.
     with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE problems ADD COLUMN IF NOT EXISTS topic_tags JSON"))
+        conn.execute(text("ALTER TABLE problems ADD COLUMN IF NOT EXISTS company_tags JSON"))
+        conn.execute(text("ALTER TABLE problems ADD COLUMN IF NOT EXISTS hints JSON"))
+        conn.execute(text("ALTER TABLE problems ADD COLUMN IF NOT EXISTS visible_testcases JSON"))
+        conn.execute(text("ALTER TABLE problems ADD COLUMN IF NOT EXISTS hidden_testcases JSON"))
+        conn.execute(text("ALTER TABLE problems ADD COLUMN IF NOT EXISTS is_premium BOOLEAN DEFAULT FALSE"))
+        conn.execute(text("ALTER TABLE problems ADD COLUMN IF NOT EXISTS input_format TEXT"))
+        conn.execute(text("ALTER TABLE problems ADD COLUMN IF NOT EXISTS output_format TEXT"))
+        conn.execute(text("ALTER TABLE problems ADD COLUMN IF NOT EXISTS constraints TEXT"))
         conn.execute(text("ALTER TABLE problems ADD COLUMN IF NOT EXISTS subtopic VARCHAR(128)"))
         conn.execute(text("ALTER TABLE problems ADD COLUMN IF NOT EXISTS tutorial_link VARCHAR(1024)"))
+        conn.execute(text("UPDATE problems SET topic_tags = COALESCE(topic_tags, '[]'::json)"))
+        conn.execute(text("UPDATE problems SET company_tags = COALESCE(company_tags, '[]'::json)"))
+        conn.execute(text("UPDATE problems SET hints = COALESCE(hints, '[]'::json)"))
+        conn.execute(text("UPDATE problems SET visible_testcases = COALESCE(visible_testcases, '[]'::json)"))
+        conn.execute(text("UPDATE problems SET hidden_testcases = COALESCE(hidden_testcases, '[]'::json)"))
 
     def sync_contests_job() -> None:
         db = SessionLocal()
