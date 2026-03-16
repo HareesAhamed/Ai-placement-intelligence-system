@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BookOpenText } from 'lucide-react';
+import { BookOpenText, RefreshCw } from 'lucide-react';
 
 import { AuthRequiredCard } from '../components/auth/AuthRequiredCard';
 import { TutorialViewer } from '../components/tutorials/TutorialViewer';
 import { Card } from '../components/ui/Card';
 import { useAuth } from '../context/useAuth';
-import { fetchRoadmap, fetchTutorials } from '../services/api';
+import { fetchAnalyticsSummary, fetchProgressAnalytics, fetchRoadmap, fetchTutorials } from '../services/api';
 import type { TutorialItem } from '../types/coding';
 
 export default function Tutorials() {
@@ -14,6 +14,7 @@ export default function Tutorials() {
   const [roadmapDaysByTopic, setRoadmapDaysByTopic] = useState<Record<string, number>>({});
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [snapshot, setSnapshot] = useState<{ accuracy: number; attempt_count: number; roadmap_completion: number } | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -41,6 +42,23 @@ export default function Tutorials() {
     })();
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    void (async () => {
+      const [summary, progress] = await Promise.all([
+        fetchAnalyticsSummary().catch(() => null),
+        fetchProgressAnalytics().catch(() => null),
+      ]);
+      if (summary && progress) {
+        setSnapshot({
+          accuracy: summary.accuracy,
+          attempt_count: summary.attempt_count,
+          roadmap_completion: progress.roadmap_completion,
+        });
+      }
+    })();
+  }, [isAuthenticated]);
+
   const filtered = useMemo(
     () => tutorials.filter((item) => `${item.topic} ${item.title}`.toLowerCase().includes(query.toLowerCase())),
     [tutorials, query]
@@ -56,10 +74,37 @@ export default function Tutorials() {
       ) : null}
 
       <Card hover={false} className="space-y-3 border-[#222A33] bg-[#151B22]">
-        <div className="flex items-center gap-2">
-          <BookOpenText className="h-5 w-5 text-[#3B82F6]" />
-          <h2 className="text-lg font-semibold text-[#E2E8F0]">Tutorial Modules</h2>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <BookOpenText className="h-5 w-5 text-[#3B82F6]" />
+            <h2 className="text-lg font-semibold text-[#E2E8F0]">Tutorial Modules</h2>
+          </div>
+          <button
+            onClick={() => {
+              if (!isAuthenticated) return;
+              void (async () => {
+                const [summary, progress] = await Promise.all([
+                  fetchAnalyticsSummary().catch(() => null),
+                  fetchProgressAnalytics().catch(() => null),
+                ]);
+                if (summary && progress) {
+                  setSnapshot({
+                    accuracy: summary.accuracy,
+                    attempt_count: summary.attempt_count,
+                    roadmap_completion: progress.roadmap_completion,
+                  });
+                }
+              })();
+            }}
+            className="inline-flex items-center gap-1 rounded-lg border border-[#1F2937] bg-[#111827] px-3 py-1.5 text-xs font-semibold text-[#E5E7EB]"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Refresh
+          </button>
         </div>
+        {snapshot ? (
+          <p className="text-xs text-[#94A3B8]">Accuracy {Math.round(snapshot.accuracy)}% • Submissions {snapshot.attempt_count} • Roadmap {Math.round(snapshot.roadmap_completion)}%</p>
+        ) : null}
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}

@@ -194,6 +194,11 @@ export async function fetchSurvey(): Promise<SurveyResponse> {
   return res.data;
 }
 
+export async function fetchSurveyStatus(): Promise<{ has_survey: boolean }> {
+  const res = await api.get<{ has_survey: boolean }>('/survey/status');
+  return res.data;
+}
+
 export async function fetchAssessmentProblems(): Promise<AssessmentProblem[]> {
   const res = await api.get<AssessmentProblem[]>('/assessment/problems');
   return res.data;

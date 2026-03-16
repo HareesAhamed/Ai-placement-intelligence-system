@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Search, Shield } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { RefreshCw, Search, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { ProblemTable } from '../components/problems/ProblemTable';
 import { Card } from '../components/ui/Card';
 import { useAuth } from '../context/useAuth';
-import { fetchProblems, fetchRoadmap, toggleProblemBookmark } from '../services/api';
+import { fetchAnalyticsSummary, fetchProblems, fetchProgressAnalytics, fetchRoadmap, toggleProblemBookmark } from '../services/api';
 import type { ProblemListItem } from '../types/coding';
 
 const PAGE_SIZE = 12;
@@ -24,6 +24,7 @@ export default function Problems() {
   const [roadmapFilter, setRoadmapFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [bookmarkBusyId, setBookmarkBusyId] = useState<number | null>(null);
+  const [analyticsSnapshot, setAnalyticsSnapshot] = useState<{ accuracy: number; attempt_count: number; roadmap_completion: number } | null>(null);
 
   const navigate = useNavigate();
   const { isAuthenticated, openAuthModal } = useAuth();
@@ -53,6 +54,25 @@ export default function Problems() {
       }
     })();
   }, [isAuthenticated]);
+
+  const refreshAnalyticsSnapshot = useCallback(async () => {
+    if (!isAuthenticated) return;
+    const [summary, progress] = await Promise.all([
+      fetchAnalyticsSummary().catch(() => null),
+      fetchProgressAnalytics().catch(() => null),
+    ]);
+    if (summary && progress) {
+      setAnalyticsSnapshot({
+        accuracy: summary.accuracy,
+        attempt_count: summary.attempt_count,
+        roadmap_completion: progress.roadmap_completion,
+      });
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    void refreshAnalyticsSnapshot();
+  }, [refreshAnalyticsSnapshot]);
 
   useEffect(() => {
     setPage(1);
@@ -119,6 +139,19 @@ export default function Problems() {
   return (
     <div className="space-y-6">
       <Card hover={false} className="border-[#222A33] bg-[#151B22] p-4 sm:p-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="text-xs text-[#94A3B8]">
+            Accuracy {Math.round(analyticsSnapshot?.accuracy ?? 0)}% • Submissions {analyticsSnapshot?.attempt_count ?? 0} • Roadmap {Math.round(analyticsSnapshot?.roadmap_completion ?? 0)}%
+          </div>
+          <button
+            onClick={() => void refreshAnalyticsSnapshot()}
+            className="inline-flex items-center gap-1 rounded-lg border border-[#1F2937] bg-[#111827] px-3 py-1.5 text-xs font-semibold text-[#E5E7EB]"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Refresh
+          </button>
+        </div>
+
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <button
             onClick={() => setTab('all')}

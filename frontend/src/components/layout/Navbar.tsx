@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom';
-import { BellDot, Search, Flame, Menu, LogIn, UserPlus, LogOut } from 'lucide-react';
+import { BellDot, Search, Flame, Menu, LogIn, UserPlus, LogOut, SlidersHorizontal } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/useAuth';
 
@@ -9,7 +9,6 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/roadmap': { title: 'Roadmap', subtitle: 'AI-generated personalized study plan' },
   '/analytics': { title: 'Analytics', subtitle: 'Deep dive into your performance metrics' },
   '/tutorials': { title: 'Tutorials', subtitle: 'Topic-wise concept guides, examples, and complexity notes' },
-  '/onboarding': { title: 'Onboarding', subtitle: 'Set your preparation goals to personalize AI roadmap generation' },
   '/contests': { title: 'Contests', subtitle: 'Track upcoming, live, and past coding contests' },
   '/profile': { title: 'Profile', subtitle: 'Connect external coding profiles and sync platform stats' },
 };
@@ -28,7 +27,7 @@ interface NavbarProps {
 export function Navbar({ onMenuClick }: NavbarProps) {
   const location = useLocation();
   const pageInfo = resolvePageInfo(location.pathname);
-  const { isAuthenticated, authEmail, openAuthModal, logout } = useAuth();
+  const { isAuthenticated, authEmail, openAuthModal, openSetupModal, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-40 h-20 bg-[#0B0F14]/90 backdrop-blur-xl border-b border-[#222A33]">
@@ -81,6 +80,13 @@ export function Navbar({ onMenuClick }: NavbarProps) {
 
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
+              <button
+                onClick={openSetupModal}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#1F2937]/70 bg-[#111827]/70 px-3 py-2 text-xs font-semibold text-[#E5E7EB] hover:bg-[#1F2937]/70"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Setup</span>
+              </button>
               <div className="hidden md:block rounded-lg border border-[#1F2937]/60 bg-[#111827]/70 px-3 py-2 text-xs text-[#CBD5E1]">
                 {authEmail ?? 'Authenticated'}
               </div>

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -9,6 +9,15 @@ from app.models.user import User
 from app.schemas.survey import SurveyReadResponse, SurveySubmitRequest
 
 router = APIRouter(prefix="/survey", tags=["survey"])
+
+
+@router.get("/status")
+def get_survey_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, bool]:
+    survey = db.scalar(select(OnboardingSurvey).where(OnboardingSurvey.user_id == current_user.id))
+    return {"has_survey": survey is not None}
 
 
 @router.post("/submit", response_model=SurveyReadResponse, status_code=status.HTTP_201_CREATED)
@@ -42,18 +51,5 @@ def get_survey(
 ) -> OnboardingSurvey:
     survey = db.scalar(select(OnboardingSurvey).where(OnboardingSurvey.user_id == current_user.id))
     if not survey:
-        # Returning 404 would force additional client error handling for first-time users.
-        survey = OnboardingSurvey(
-            user_id=current_user.id,
-            current_year="3rd",
-            dsa_experience_level="Beginner",
-            target_companies=[],
-            weekly_study_hours=6,
-            preferred_language="python",
-            preparation_start_date=current_user.created_at.date(),
-            goal_timeline_months=6,
-        )
-        db.add(survey)
-        db.commit()
-        db.refresh(survey)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Survey not found")
     return survey

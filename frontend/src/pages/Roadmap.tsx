@@ -7,7 +7,7 @@ import { Card } from '../components/ui/Card';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { useAuth } from '../context/useAuth';
-import { completeRoadmapDay, fetchRoadmap, generateRoadmap, refreshRoadmap } from '../services/api';
+import { fetchRoadmap, generateRoadmap, refreshRoadmap } from '../services/api';
 import type { RoadmapPlan } from '../types/coding';
 
 const topicColorMap: Record<string, string> = {
@@ -96,18 +96,6 @@ export default function Roadmap() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const onCompleteDay = async (dayId: number) => {
-    if (!plan) return;
-    await completeRoadmapDay(dayId);
-    setPlan((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        days: prev.days.map((day) => (day.id === dayId ? { ...day, is_completed: true } : day)),
-      };
-    });
   };
 
   const progress = useMemo(() => {
@@ -223,15 +211,10 @@ export default function Roadmap() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.02 }}
                       whileHover={{ y: -2 }}
-                      onClick={() => {
-                        if (!day.is_completed) {
-                          void onCompleteDay(day.id);
-                        }
-                      }}
                       className={`relative rounded-xl border p-4 transition-all duration-200 ${
                         day.is_completed
                           ? 'cursor-default border-[#10B981]/30 bg-[#10B981]/10'
-                          : 'cursor-pointer border-[#1F2937]/50 bg-[#0B1120]/70 hover:border-[#3B82F6]/40'
+                          : 'border-[#1F2937]/50 bg-[#0B1120]/70 hover:border-[#3B82F6]/40'
                       }`}
                     >
                       <div className="mb-2 flex items-center justify-between">

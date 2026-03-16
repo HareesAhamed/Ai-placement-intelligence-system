@@ -15,6 +15,7 @@ from app.models.assessment import AssessmentAttempt
 from app.models.onboarding import OnboardingSurvey
 from app.models.problem import Problem
 from app.models.roadmap import RoadmapDay, RoadmapPlan
+from app.models.submission import Submission
 from app.models.user import User
 from app.services.company_engine import company_engine
 from app.services.weakness_engine import weakness_engine
@@ -387,13 +388,60 @@ class RoadmapEngine:
         db.refresh(day)
         return day
 
+    def _sync_completion_from_behavior(self, db: Session, plan: RoadmapPlan) -> None:
+        accepted_submissions = list(
+            db.scalars(
+                select(Submission)
+                .where(Submission.user_id == plan.user_id, Submission.status == "Accepted")
+                .order_by(Submission.created_at.asc())
+            ).all()
+        )
+
+        topic_accepts: dict[str, int] = {}
+        for submission in accepted_submissions:
+            problem = db.get(Problem, submission.problem_id)
+            if not problem:
+                continue
+            topic = problem.topic.strip()
+            topic_accepts[topic] = topic_accepts.get(topic, 0) + 1
+
+        updated = False
+        days_sorted = sorted(plan.days, key=lambda day: day.day_number)
+        for day in days_sorted:
+            next_state = day.is_completed
+            if day.task_type == "practice":
+                available = topic_accepts.get(day.topic, 0)
+                if available >= max(1, day.problems_count):
+                    next_state = True
+                    topic_accepts[day.topic] = available - max(1, day.problems_count)
+                else:
+                    next_state = False
+            elif day.task_type == "weekly-review":
+                prior_week_days = [
+                    item
+                    for item in days_sorted
+                    if item.week_number == day.week_number and item.day_number < day.day_number and item.task_type == "practice"
+                ]
+                next_state = len(prior_week_days) > 0 and all(item.is_completed for item in prior_week_days)
+
+            if day.is_completed != next_state:
+                day.is_completed = next_state
+                updated = True
+
+        if updated:
+            db.commit()
+
     def get_active_plan(self, db: Session, user_id: int) -> RoadmapPlan | None:
-        return db.scalar(
+        plan = db.scalar(
             select(RoadmapPlan)
             .options(selectinload(RoadmapPlan.days))
             .where(RoadmapPlan.user_id == user_id, RoadmapPlan.is_active.is_(True))
             .order_by(RoadmapPlan.created_at.desc())
         )
+        if plan:
+            self._sync_completion_from_behavior(db, plan)
+            db.refresh(plan)
+        return plan
 
     def _pick_tutorial_link(self, db: Session, topic: str) -> str | None:
         candidate = db.scalar(select(Problem.tutorial_link).where(Problem.topic == topic, Problem.tutorial_link.is_not(None)))

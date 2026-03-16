@@ -11,7 +11,6 @@ import {
   X,
   Trophy,
   UserCircle2,
-  ClipboardList,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { AnimatePresence } from 'framer-motion';
@@ -22,7 +21,6 @@ const navItems = [
   { label: 'Roadmap', path: '/roadmap', icon: Compass },
   { label: 'Analytics', path: '/analytics', icon: PieChart },
   { label: 'Tutorials', path: '/tutorials', icon: BookOpenText },
-  { label: 'Onboarding', path: '/onboarding', icon: ClipboardList },
   { label: 'Contests', path: '/contests', icon: Trophy },
   { label: 'Profile', path: '/profile', icon: UserCircle2 },
 ];

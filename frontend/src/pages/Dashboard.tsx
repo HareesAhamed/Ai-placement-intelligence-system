@@ -1,75 +1,84 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  AreaChart, Area,
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, BarChart, Bar,
 } from 'recharts';
-import { Timer, Percent, ShieldAlert, Crown, MoveUpRight, Hash, Clock3 } from 'lucide-react';
+import { Timer, Percent, ShieldAlert, Crown, Hash, RefreshCw, Clock3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+import { AuthRequiredCard } from '../components/auth/AuthRequiredCard';
 import { Card } from '../components/ui/Card';
 import { ScoreRing } from '../components/ui/ScoreRing';
 import { TopicBadge } from '../components/ui/TopicBadge';
 import { ProgressBar } from '../components/ui/ProgressBar';
-
-import { userPerformance, companyPatterns, weeklyPerformance, aiInsights, problemBank, mockTestHistory } from '../data/mockData';
-import { analyzeWeaknesses } from '../utils/weaknessEngine';
-import { calculateOverallReadiness, getCompanyReadinessBreakdown } from '../utils/readinessEngine';
+import { useAuth } from '../context/useAuth';
+import {
+  fetchAnalyticsSummary,
+  fetchCompanyReadiness,
+  fetchProgressAnalytics,
+  fetchSubmissions,
+  fetchTopicStrength,
+} from '../services/api';
 
 export default function Dashboard() {
-  const weaknessData = useMemo(() => analyzeWeaknesses(userPerformance), []);
-  const overallReadiness = useMemo(
-    () => calculateOverallReadiness(userPerformance, companyPatterns), []
-  );
-  const companyReadiness = useMemo(
-    () => getCompanyReadinessBreakdown(userPerformance, companyPatterns), []
-  );
+  const { isAuthenticated, openAuthModal } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [summary, setSummary] = useState<{ accuracy: number; attempt_count: number; avg_runtime_ms: number; difficulty_distribution: Record<string, number> } | null>(null);
+  const [progress, setProgress] = useState<{ roadmap_completion: number; consistency: Array<{ date: string; attempts: number }> } | null>(null);
+  const [topicStrength, setTopicStrength] = useState<Array<{ topic: string; attempts: number; accuracy: number; classification: string }>>([]);
+  const [companyReadiness, setCompanyReadiness] = useState<Record<string, number>>({});
+  const [recentSubmissions, setRecentSubmissions] = useState<Array<{ created_at: string; status: string; problem_id: number }>>([]);
 
-  // Prepare radar chart data
+  const refreshDashboard = useCallback(async () => {
+    if (!isAuthenticated) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const [analyticsSummary, progressData, topicData, readinessData, submissions] = await Promise.all([
+        fetchAnalyticsSummary().catch(() => null),
+        fetchProgressAnalytics().catch(() => null),
+        fetchTopicStrength().catch(() => ({ topics: [] })),
+        fetchCompanyReadiness().catch(() => ({ readiness: {} })),
+        fetchSubmissions().catch(() => []),
+      ]);
+      setSummary(analyticsSummary);
+      setProgress(progressData ? { roadmap_completion: progressData.roadmap_completion, consistency: progressData.consistency } : null);
+      setTopicStrength(topicData.topics.slice(0, 8));
+      setCompanyReadiness(readinessData.readiness ?? {});
+      setRecentSubmissions(submissions.slice(0, 6));
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    void refreshDashboard();
+  }, [refreshDashboard]);
+
   const radarData = useMemo(
-    () => userPerformance.map(t => ({
-      topic: t.topic.length > 8 ? t.topic.substring(0, 8) + '.' : t.topic,
-      fullTopic: t.topic,
-      strength: Math.round((t.solved / t.attempts) * 100),
-      fullMark: 100,
-    })), []
+    () => topicStrength.map((item) => ({ topic: item.topic, strength: Math.round(item.accuracy), fullMark: 100 })),
+    [topicStrength]
   );
 
-  // Random AI insight
-  // eslint-disable-next-line react-hooks/purity
-  const insight = useMemo(() => aiInsights[Math.floor(Math.random() * aiInsights.length)], []);
+  const weakTopics = useMemo(() => topicStrength.filter((item) => item.classification === 'weak'), [topicStrength]);
+  const avgTopics = useMemo(() => topicStrength.filter((item) => item.classification === 'average'), [topicStrength]);
+  const strongTopics = useMemo(() => topicStrength.filter((item) => item.classification === 'strong'), [topicStrength]);
 
-  const weakTopics = weaknessData.filter(w => w.classification === 'Weak');
-  const avgTopics = weaknessData.filter(w => w.classification === 'Average');
-  const strongTopics = weaknessData.filter(w => w.classification === 'Strong');
+  const companyRows = useMemo(
+    () => Object.entries(companyReadiness).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([company, readiness]) => ({ company, readiness: Math.round(readiness) })),
+    [companyReadiness]
+  );
 
-  const recentActivity = useMemo(() => {
-    const savedProblems = JSON.parse(localStorage.getItem('prepiq_problems') || 'null') || problemBank;
-    const savedMocks = JSON.parse(localStorage.getItem('prepiq_mock_history') || 'null') || mockTestHistory;
+  const overallReadiness = useMemo(() => {
+    if (companyRows.length === 0) return 0;
+    return Math.round(companyRows.reduce((acc, item) => acc + item.readiness, 0) / companyRows.length);
+  }, [companyRows]);
 
-    const solvedActivities = savedProblems
-      .filter((problem: { solved: boolean; solvedAt?: string; title: string; topic: string }) => problem.solved && problem.solvedAt)
-      .map((problem: { solvedAt: string; title: string; topic: string }) => ({
-        date: problem.solvedAt,
-        title: `Solved ${problem.title}`,
-        detail: `${problem.topic} problem completed`,
-        type: 'problem' as const,
-      }));
-
-    const mockActivities = savedMocks.map((mock: { date: string; category: string; score: number; type: string }) => ({
-      date: mock.date,
-      title: `${mock.category} mock test`,
-      detail: `${mock.type === 'pattern' ? 'Pattern-wise' : 'Company-wise'} score: ${mock.score}%`,
-      type: 'mock' as const,
-    }));
-
-    return [...solvedActivities, ...mockActivities]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 6);
-  }, []);
-
-  const totalSolved = userPerformance.reduce((a, b) => a + b.solved, 0);
-  const totalAttempts = userPerformance.reduce((a, b) => a + b.attempts, 0);
+  const difficultyRows = useMemo(
+    () => Object.entries(summary?.difficulty_distribution ?? {}).map(([difficulty, count]) => ({ difficulty, count })),
+    [summary]
+  );
 
   const staggerContainer = {
     hidden: { opacity: 0 },
@@ -91,15 +100,39 @@ export default function Dashboard() {
       animate="show"
       className="space-y-8"
     >
+      {!isAuthenticated ? (
+        <AuthRequiredCard
+          title="Login Required"
+          message="Sign in to view dynamic analytics based on your preparation behavior."
+        />
+      ) : null}
+
+      <div className="flex justify-end">
+        <button
+          onClick={() => {
+            if (!isAuthenticated) {
+              openAuthModal('login');
+              return;
+            }
+            void refreshDashboard();
+          }}
+          disabled={loading}
+          className="inline-flex items-center gap-2 rounded-lg border border-[#1F2937] bg-[#111827] px-3 py-2 text-xs font-semibold text-[#E5E7EB] disabled:opacity-60"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Refresh Analytics
+        </button>
+      </div>
+
       {/* Top Stats Row */}
       <motion.div variants={staggerItem} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {[
-          { label: 'Problems Solved', value: totalSolved, sub: `of ${totalAttempts} attempted`, icon: Hash, color: '#6366F1', change: '+12%' },
-          { label: 'Accuracy Rate', value: `${Math.round((totalSolved / totalAttempts) * 100)}%`, sub: 'overall', icon: Percent, color: '#10B981', change: '+5%' },
-          { label: 'Weak Areas', value: weakTopics.length, sub: 'topics need focus', icon: ShieldAlert, color: '#F43F5E', change: '-2' },
-          { label: 'Avg. Time', value: `${Math.round(userPerformance.reduce((a, b) => a + b.avgTime, 0) / userPerformance.length)}m`, sub: 'per problem', icon: Timer, color: '#06B6D4', change: '-3m' },
+          { label: 'Submissions', value: summary?.attempt_count ?? 0, sub: 'total tracked attempts', icon: Hash, color: '#6366F1' },
+          { label: 'Accuracy Rate', value: `${Math.round(summary?.accuracy ?? 0)}%`, sub: 'overall solved ratio', icon: Percent, color: '#10B981' },
+          { label: 'Weak Areas', value: weakTopics.length, sub: 'topics need focus', icon: ShieldAlert, color: '#F43F5E' },
+          { label: 'Avg. Runtime', value: `${Math.round(summary?.avg_runtime_ms ?? 0)} ms`, sub: 'across submissions', icon: Timer, color: '#06B6D4' },
         ].map((stat) => (
-          <Card key={stat.label} className="!p-5" glow="blue">
+          <Card key={stat.label} className="p-5!" glow="blue">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-medium text-[#9CA3AF] uppercase tracking-wider">{stat.label}</p>
@@ -113,10 +146,6 @@ export default function Dashboard() {
                 >
                   <stat.icon className="w-4.5 h-4.5" style={{ color: stat.color }} />
                 </div>
-                <span className="flex items-center gap-0.5 text-xs font-medium text-[#10B981]">
-                  <MoveUpRight className="w-3 h-3" />
-                  {stat.change}
-                </span>
               </div>
             </div>
           </Card>
@@ -141,7 +170,7 @@ export default function Dashboard() {
               Company Readiness
             </h3>
             <div className="space-y-4">
-              {companyReadiness.map((c) => (
+              {companyRows.map((c) => (
                 <ProgressBar
                   key={c.company}
                   label={c.company}
@@ -179,7 +208,7 @@ export default function Dashboard() {
           <Card hover={false}>
             <h3 className="text-sm font-semibold text-[#E5E7EB] mb-4">7-Day Performance Trend</h3>
             <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={weeklyPerformance}>
+              <AreaChart data={progress?.consistency ?? []}>
                 <defs>
                   <linearGradient id="colorAccuracy" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
@@ -191,7 +220,7 @@ export default function Dashboard() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
-                <XAxis dataKey="day" tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={{ stroke: '#1F2937' }} />
+                <XAxis dataKey="date" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={{ stroke: '#1F2937' }} />
                 <YAxis tick={{ fill: '#9CA3AF', fontSize: 12 }} axisLine={{ stroke: '#1F2937' }} />
                 <Tooltip
                   contentStyle={{
@@ -201,9 +230,21 @@ export default function Dashboard() {
                     fontSize: '12px',
                   }}
                 />
-                <Area type="monotone" dataKey="accuracy" stroke="#3B82F6" fillOpacity={1} fill="url(#colorAccuracy)" strokeWidth={2} />
-                <Area type="monotone" dataKey="problems" stroke="#8B5CF6" fillOpacity={1} fill="url(#colorProblems)" strokeWidth={2} />
+                <Area type="monotone" dataKey="attempts" stroke="#3B82F6" fillOpacity={1} fill="url(#colorAccuracy)" strokeWidth={2} />
               </AreaChart>
+            </ResponsiveContainer>
+          </Card>
+
+          <Card hover={false}>
+            <h3 className="text-sm font-semibold text-[#E5E7EB] mb-4">Difficulty Distribution</h3>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={difficultyRows}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
+                <XAxis dataKey="difficulty" tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={{ stroke: '#1F2937' }} />
+                <YAxis tick={{ fill: '#9CA3AF', fontSize: 11 }} axisLine={{ stroke: '#1F2937' }} />
+                <Tooltip />
+                <Bar dataKey="count" fill="#8B5CF6" radius={[6, 6, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </Card>
         </motion.div>
@@ -211,34 +252,38 @@ export default function Dashboard() {
         {/* Right Column */}
         <motion.div variants={staggerItem} className="lg:col-span-3 space-y-6">
           {/* AI Insight */}
-          <Card className="!bg-gradient-to-br !from-[#6366F1]/10 !to-[#06B6D4]/10 !border-[#6366F1]/20" hover={false}>
+          <Card className="border-[#1E3A8A]/30! bg-[#0B1220]!" hover={false}>
             <div className="flex items-center gap-2 mb-3">
               <Crown className="w-4 h-4 text-[#06B6D4]" />
               <h3 className="text-sm font-semibold text-[#E5E7EB]">AI Insight</h3>
             </div>
-            <p className="text-sm text-[#9CA3AF] leading-relaxed">{insight}</p>
+            <p className="text-sm text-[#9CA3AF] leading-relaxed">
+              {weakTopics.length > 0
+                ? `${weakTopics[0].topic} is currently your weakest topic (${Math.round(weakTopics[0].accuracy)}% accuracy).`
+                : 'Performance is stable. Increase medium and hard problem volume for faster growth.'}
+            </p>
           </Card>
 
           {/* Weakness Analysis */}
           <Card hover={false}>
             <h3 className="text-sm font-semibold text-[#E5E7EB] mb-4">Topic Analysis</h3>
             <div className="space-y-3">
-              {weaknessData.slice(0, 8).map((w) => (
+              {topicStrength.slice(0, 8).map((w) => (
                 <div key={w.topic} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div
                       className="w-2 h-2 rounded-full"
                       style={{
                         backgroundColor:
-                          w.classification === 'Strong' ? '#10B981' :
-                          w.classification === 'Average' ? '#F59E0B' : '#EF4444'
+                          w.classification === 'strong' ? '#10B981' :
+                          w.classification === 'average' ? '#F59E0B' : '#EF4444'
                       }}
                     />
                     <span className="text-sm text-[#E5E7EB]">{w.topic}</span>
                   </div>
                   <TopicBadge
                     topic={w.classification}
-                    variant={w.classification.toLowerCase() as 'strong' | 'average' | 'weak'}
+                    variant={w.classification as 'strong' | 'average' | 'weak'}
                     size="sm"
                   />
                 </div>
@@ -252,15 +297,16 @@ export default function Dashboard() {
               Recent Activity
             </h3>
             <div className="space-y-3">
-              {recentActivity.map((activity, idx) => (
-                <div key={`${activity.title}-${idx}`} className="p-3 rounded-xl border border-[#1F2937]/40 bg-[#0B1120]/60">
+              {recentSubmissions.map((activity, idx) => (
+                <div key={`${activity.problem_id}-${idx}`} className="p-3 rounded-xl border border-[#1F2937]/40 bg-[#0B1120]/60">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm text-[#E5E7EB] truncate">{activity.title}</p>
-                    <span className="text-[10px] text-[#9CA3AF] shrink-0">{activity.date}</span>
+                    <p className="text-sm text-[#E5E7EB] truncate">Problem #{activity.problem_id}</p>
+                    <span className="text-[10px] text-[#9CA3AF] shrink-0">{new Date(activity.created_at).toLocaleDateString()}</span>
                   </div>
-                  <p className="text-xs text-[#9CA3AF] mt-1">{activity.detail}</p>
+                  <p className="text-xs text-[#9CA3AF] mt-1">Submission status: {activity.status}</p>
                 </div>
               ))}
+              {recentSubmissions.length === 0 ? <p className="text-xs text-[#9CA3AF]">No submissions yet.</p> : null}
             </div>
           </Card>
 

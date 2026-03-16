@@ -184,7 +184,16 @@ export default function Profile() {
       ) : null}
 
       <Card hover={false} className="space-y-4 border-[#222A33] bg-[#151B22]">
-        <h2 className="text-lg font-semibold text-[#E2E8F0]">Platform Connectors</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-[#E2E8F0]">Platform Connectors</h2>
+          <button
+            onClick={() => void refresh()}
+            className="inline-flex items-center gap-2 rounded-lg border border-[#1F2937] bg-[#111827] px-3 py-2 text-xs text-[#CBD5E1]"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh Analytics
+          </button>
+        </div>
         <div className="grid gap-3 md:grid-cols-2">
           <div>
             <label className="mb-1 block text-xs uppercase tracking-wide text-[#94A3B8]">LeetCode Username</label>

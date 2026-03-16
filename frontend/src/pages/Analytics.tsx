@@ -1,82 +1,114 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Line, LineChart,
 } from 'recharts';
-import { Activity, ArrowDownToDot, Landmark, LayoutGrid, Timer } from 'lucide-react';
+import { Activity, ArrowDownToDot, Landmark, LayoutGrid, Timer, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+import { AuthRequiredCard } from '../components/auth/AuthRequiredCard';
 import { Card } from '../components/ui/Card';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { TopicBadge } from '../components/ui/TopicBadge';
-
-import { userPerformance, companyPatterns, heatmapData } from '../data/mockData';
-import { analyzeWeaknesses } from '../utils/weaknessEngine';
-import { calculateReadiness } from '../utils/readinessEngine';
+import { useAuth } from '../context/useAuth';
+import {
+  fetchAnalyticsSummary,
+  fetchCompanyReadiness,
+  fetchProgressAnalytics,
+  fetchSubmissions,
+  fetchTopicStrength,
+} from '../services/api';
 
 const CHART_COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#06B6D4', '#6366F1', '#F97316', '#84CC16', '#A855F7', '#14B8A6'];
 
-const intensityColors = [
-  'bg-[#1F2937]/30',
-  'bg-[#6366F1]/20',
-  'bg-[#6366F1]/40',
-  'bg-[#6366F1]/60',
-  'bg-[#6366F1]/80',
-];
-
 export default function Analytics() {
-  const weaknessData = useMemo(() => analyzeWeaknesses(userPerformance), []);
+  const { isAuthenticated, openAuthModal } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [topicStrength, setTopicStrength] = useState<Array<{ topic: string; attempts: number; accuracy: number; avg_runtime_ms: number; classification: string }>>([]);
+  const [companyReadiness, setCompanyReadiness] = useState<Record<string, number>>({});
+  const [summary, setSummary] = useState<{ difficulty_distribution: Record<string, number> } | null>(null);
+  const [progress, setProgress] = useState<Array<{ date: string; attempts: number }>>([]);
+  const [timeSpentData, setTimeSpentData] = useState<Array<{ topic: string; minutes: number }>>([]);
 
-  const timeSpentData = useMemo(() => {
-    const savedProblems = JSON.parse(localStorage.getItem('prepiq_problems') || 'null') || [];
-    const source = savedProblems.length > 0
-      ? savedProblems.filter((p: { solved: boolean; timeTaken?: number }) => p.solved && p.timeTaken)
-      : userPerformance.map((topic) => ({
-          topic: topic.topic,
-          timeTaken: Math.round((topic.avgTime * topic.attempts) / Math.max(1, topic.solved)),
-          solved: true,
-        }));
+  const refreshAnalytics = useCallback(async () => {
+    if (!isAuthenticated) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const [topicData, readinessData, analyticsSummary, progressData, submissions] = await Promise.all([
+        fetchTopicStrength().catch(() => ({ topics: [] })),
+        fetchCompanyReadiness().catch(() => ({ readiness: {} })),
+        fetchAnalyticsSummary().catch(() => null),
+        fetchProgressAnalytics().catch(() => null),
+        fetchSubmissions().catch(() => []),
+      ]);
 
-    const totals = source.reduce((acc: Record<string, number>, problem: { topic: string; timeTaken: number }) => {
-      acc[problem.topic] = (acc[problem.topic] || 0) + problem.timeTaken;
-      return acc;
-    }, {});
+      setTopicStrength(topicData.topics);
+      setCompanyReadiness(readinessData.readiness ?? {});
+      setSummary(analyticsSummary ? { difficulty_distribution: analyticsSummary.difficulty_distribution } : null);
+      setProgress(progressData?.consistency ?? []);
 
-    return Object.entries(totals as Record<string, number>)
-      .map(([topic, minutes]) => ({ topic, minutes: Number(minutes) }))
-      .sort((a, b) => b.minutes - a.minutes)
-      .slice(0, 8);
-  }, []);
+      const topicMap = new Map<string, number>();
+      const strengthMap = new Map<string, number>();
+      for (const item of topicData.topics) {
+        strengthMap.set(item.topic, item.avg_runtime_ms);
+      }
+      for (const item of submissions) {
+        const key = `Problem ${item.problem_id}`;
+        topicMap.set(key, (topicMap.get(key) ?? 0) + ((item.runtime_ms ?? 0) / 1000 / 60));
+      }
+      const synthesized = Array.from(topicMap.entries())
+        .slice(0, 10)
+        .map(([topic, minutes]) => ({ topic, minutes: Math.max(1, Math.round(minutes)) }));
+      if (synthesized.length > 0) {
+        setTimeSpentData(synthesized);
+      } else {
+        setTimeSpentData(
+          topicData.topics.slice(0, 8).map((item) => ({ topic: item.topic, minutes: Math.max(1, Math.round(item.avg_runtime_ms / 60000) * Math.max(1, item.attempts)) }))
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated]);
 
-  // Company donut data
-  const companyData = useMemo(() => {
-    return Object.entries(companyPatterns).map(([company, weights]) => ({
-      company,
-      readiness: calculateReadiness(userPerformance, weights),
-      topics: Object.entries(weights)
+  useEffect(() => {
+    void refreshAnalytics();
+  }, [refreshAnalytics]);
+
+  const companyData = useMemo(
+    () =>
+      Object.entries(companyReadiness)
         .sort((a, b) => b[1] - a[1])
-        .map(([topic, weight]) => ({ topic, weight: Math.round(weight * 100) })),
-    }));
-  }, []);
+        .slice(0, 4)
+        .map(([company, readiness]) => ({
+          company,
+          readiness: Math.round(readiness),
+          topics: topicStrength.slice(0, 5).map((item) => ({ topic: item.topic, weight: Math.round(item.accuracy) })),
+        })),
+    [companyReadiness, topicStrength]
+  );
 
-  // Bar chart data
-  const barData = useMemo(() => {
-    return userPerformance.map(t => ({
-      topic: t.topic.length > 10 ? t.topic.substring(0, 10) + '.' : t.topic,
-      fullTopic: t.topic,
-      solved: t.solved,
-      unsolved: t.attempts - t.solved,
-      accuracy: Math.round((t.solved / t.attempts) * 100),
-    }));
-  }, []);
+  const barData = useMemo(
+    () =>
+      topicStrength.map((item) => ({
+        topic: item.topic.length > 10 ? `${item.topic.substring(0, 10)}.` : item.topic,
+        solved: Math.round((item.accuracy / 100) * item.attempts),
+        unsolved: Math.max(0, item.attempts - Math.round((item.accuracy / 100) * item.attempts)),
+      })),
+    [topicStrength]
+  );
 
-  // Heatmap
-  const heatmapTopics = useMemo(() => {
-    const topics = [...new Set(heatmapData.map(h => h.topic))];
-    return topics;
-  }, []);
+  const weaknessData = useMemo(
+    () => [...topicStrength].sort((a, b) => a.accuracy - b.accuracy),
+    [topicStrength]
+  );
 
-  const weeks = [1, 2, 3, 4];
+  const difficultyRows = useMemo(
+    () => Object.entries(summary?.difficulty_distribution ?? {}).map(([difficulty, value]) => ({ difficulty, value })),
+    [summary]
+  );
 
   const tooltipStyle = {
     backgroundColor: '#111827',
@@ -87,10 +119,33 @@ export default function Analytics() {
 
   return (
     <div className="space-y-6">
+      {!isAuthenticated ? (
+        <AuthRequiredCard
+          title="Login Required"
+          message="Sign in to view behavior-driven analytics charts and AI trend insights."
+        />
+      ) : null}
+
       <SectionHeader
         title="Performance Analytics"
         subtitle="Deep dive into your placement preparation metrics"
         icon={<Activity className="w-5 h-5 text-[#6366F1]" />}
+        action={
+          <button
+            onClick={() => {
+              if (!isAuthenticated) {
+                openAuthModal('login');
+                return;
+              }
+              void refreshAnalytics();
+            }}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-lg border border-[#1F2937] bg-[#111827] px-3 py-2 text-xs font-semibold text-[#E5E7EB] disabled:opacity-60"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Refresh
+          </button>
+        }
       />
 
       {/* Company-wise Donut Charts */}
@@ -107,7 +162,7 @@ export default function Analytics() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
             >
-              <Card hover={true} glow="purple" className="!p-5">
+              <Card hover={true} glow="purple" className="p-5!">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-sm font-bold text-[#E5E7EB]">{company.company}</h4>
                   <span className={`text-sm font-bold ${
@@ -205,11 +260,11 @@ export default function Analytics() {
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[#E5E7EB] truncate">{w.topic}</p>
-                    <p className="text-xs text-[#9CA3AF]">{w.accuracy}% accuracy</p>
+                    <p className="text-xs text-[#9CA3AF]">{Math.round(w.accuracy)}% accuracy</p>
                   </div>
                   <TopicBadge
                     topic={w.classification}
-                    variant={w.classification.toLowerCase() as 'strong' | 'average' | 'weak'}
+                    variant={w.classification as 'strong' | 'average' | 'weak'}
                     size="sm"
                   />
                 </motion.div>
@@ -219,65 +274,21 @@ export default function Analytics() {
         </div>
       </div>
 
-      {/* Heatmap */}
       <Card hover={false}>
         <h3 className="text-sm font-semibold text-[#E5E7EB] mb-5 flex items-center gap-2">
           <LayoutGrid className="w-4 h-4 text-[#10B981]" />
-          Topic Consistency Heatmap
-          <span className="text-xs text-[#9CA3AF] font-normal ml-2">Last 4 weeks</span>
+          Consistency Trend
+          <span className="text-xs text-[#9CA3AF] font-normal ml-2">Last 7 sessions</span>
         </h3>
-        <div className="overflow-x-auto">
-          <div className="min-w-[500px]">
-            {/* Header */}
-            <div className="grid gap-2" style={{ gridTemplateColumns: '140px repeat(4, 1fr)' }}>
-              <div />
-              {weeks.map(w => (
-                <div key={w} className="text-center text-xs text-[#9CA3AF] py-2">Week {w}</div>
-              ))}
-            </div>
-            {/* Rows */}
-            {heatmapTopics.map((topic, topicIdx) => (
-              <motion.div
-                key={topic}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: topicIdx * 0.04 }}
-                className="grid gap-2 mb-2"
-                style={{ gridTemplateColumns: '140px repeat(4, 1fr)' }}
-              >
-                <div className="flex items-center text-xs text-[#9CA3AF] font-medium pr-2 truncate">
-                  {topic}
-                </div>
-                {weeks.map(week => {
-                  const cell = heatmapData.find(h => h.topic === topic && h.week === week);
-                  const intensity = cell?.intensity ?? 0;
-                  return (
-                    <motion.div
-                      key={`${topic}-${week}`}
-                      whileHover={{ scale: 1.15 }}
-                      className={`h-10 rounded-lg ${intensityColors[intensity]} border border-[#1F2937]/20 flex items-center justify-center cursor-default`}
-                      title={`${topic} - Week ${week}: ${['None', 'Low', 'Medium', 'High', 'Intense'][intensity]}`}
-                    >
-                      {intensity > 0 && (
-                        <span className="text-[10px] text-[#9CA3AF]/60">{intensity}</span>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
-            ))}
-            {/* Legend */}
-            <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[#1F2937]/30">
-              <span className="text-[10px] text-[#9CA3AF] uppercase tracking-wider font-medium">Intensity:</span>
-              {['None', 'Low', 'Med', 'High', 'Max'].map((label, i) => (
-                <div key={label} className="flex items-center gap-1.5">
-                  <div className={`w-4 h-4 rounded ${intensityColors[i]}`} />
-                  <span className="text-[10px] text-[#9CA3AF]">{label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <ResponsiveContainer width="100%" height={260}>
+          <LineChart data={progress}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
+            <XAxis dataKey="date" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
+            <YAxis tick={{ fill: '#9CA3AF', fontSize: 11 }} />
+            <Tooltip />
+            <Line dataKey="attempts" stroke="#3B82F6" strokeWidth={2} dot={{ r: 2 }} />
+          </LineChart>
+        </ResponsiveContainer>
       </Card>
 
       <Card hover={false}>
@@ -307,6 +318,19 @@ export default function Analytics() {
               formatter={(value) => [`${Number(value ?? 0)} min`, 'Time Spent']}
             />
             <Bar dataKey="minutes" fill="#06B6D4" radius={[0, 8, 8, 0]} name="Minutes" />
+          </BarChart>
+        </ResponsiveContainer>
+      </Card>
+
+      <Card hover={false}>
+        <h3 className="text-sm font-semibold text-[#E5E7EB] mb-4">Difficulty Distribution</h3>
+        <ResponsiveContainer width="100%" height={240}>
+          <BarChart data={difficultyRows}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
+            <XAxis dataKey="difficulty" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
+            <YAxis tick={{ fill: '#9CA3AF', fontSize: 11 }} />
+            <Tooltip />
+            <Bar dataKey="value" fill="#8B5CF6" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </Card>
