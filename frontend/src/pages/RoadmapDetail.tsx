@@ -10,22 +10,35 @@ export default function RoadmapDetail() {
   const navigate = useNavigate();
   const [detail, setDetail] = useState<RoadmapDayDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!dayId) return;
     setLoading(true);
+    setError('');
     void (async () => {
       try {
         const result = await fetchRoadmapDayDetails(Number(dayId));
         setDetail(result);
+      } catch {
+        setDetail(null);
+        setError('Unable to load roadmap day details. Please generate roadmap and try again.');
       } finally {
         setLoading(false);
       }
     })();
   }, [dayId]);
 
-  if (loading || !detail) {
+  if (loading) {
     return <Card hover={false}>Loading roadmap day details...</Card>;
+  }
+
+  if (error || !detail) {
+    return (
+      <Card hover={false} className="border border-[#7F1D1D]/40 bg-[#7F1D1D]/20 text-sm text-[#FCA5A5]">
+        {error || 'Roadmap day details not found.'}
+      </Card>
+    );
   }
 
   return (

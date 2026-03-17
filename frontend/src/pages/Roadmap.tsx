@@ -248,7 +248,10 @@ export default function Roadmap() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.02 }}
                       whileHover={{ y: -2 }}
-                      onClick={() => setSelectedDayId(day.id)}
+                      onClick={() => {
+                        setSelectedDayId(day.id);
+                        navigate(`/roadmap/day/${day.id}`);
+                      }}
                       className={`relative rounded-xl border p-4 transition-all duration-200 ${
                         day.is_completed
                           ? 'cursor-default border-[#10B981]/30 bg-[#10B981]/10'
