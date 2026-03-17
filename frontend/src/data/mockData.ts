@@ -75,6 +75,21 @@ export const problemBank: Problem[] = [
   { id: 'p48', title: 'Merge Intervals', topic: 'Greedy', difficulty: 'Medium', solved: true, timeTaken: 18, attemptCount: 1, confidence: 4, solvedAt: '2026-03-01' },
   { id: 'p49', title: 'Insert Interval', topic: 'Greedy', difficulty: 'Medium', solved: true, timeTaken: 22, attemptCount: 2, confidence: 3, solvedAt: '2026-03-02' },
   { id: 'p50', title: 'Find Minimum in Rotated Sorted Array', topic: 'Binary Search', difficulty: 'Medium', solved: true, timeTaken: 15, attemptCount: 1, confidence: 4, solvedAt: '2026-03-02' },
+  { id: 'p51', title: 'Two Sum', topic: 'Array', difficulty: 'Easy', solved: true, timeTaken: 12, attemptCount: 1, confidence: 5, solvedAt: '2026-03-03' },
+  { id: 'p52', title: 'Two Sum II - Input Array Is Sorted', topic: 'Binary Search', difficulty: 'Medium', solved: true, timeTaken: 18, attemptCount: 2, confidence: 4, solvedAt: '2026-03-03' },
+  { id: 'p53', title: '4Sum', topic: 'Array', difficulty: 'Medium', solved: false, attemptCount: 2, confidence: 2 },
+  { id: 'p54', title: 'Continuous Subarray Sum', topic: 'Array', difficulty: 'Medium', solved: false, attemptCount: 3, confidence: 2 },
+  { id: 'p55', title: 'Path Sum', topic: 'Tree', difficulty: 'Easy', solved: true, timeTaken: 16, attemptCount: 1, confidence: 4, solvedAt: '2026-03-04' },
+  { id: 'p56', title: 'Path Sum II', topic: 'Tree', difficulty: 'Medium', solved: false, attemptCount: 2, confidence: 2 },
+  { id: 'p57', title: 'Path Sum III', topic: 'Tree', difficulty: 'Medium', solved: false, attemptCount: 2, confidence: 1 },
+  { id: 'p58', title: 'Target Sum', topic: 'DP', difficulty: 'Medium', solved: false, attemptCount: 3, confidence: 1 },
+  { id: 'p59', title: 'Combination Sum', topic: 'Backtracking', difficulty: 'Medium', solved: true, timeTaken: 24, attemptCount: 2, confidence: 3, solvedAt: '2026-03-05' },
+  { id: 'p60', title: 'Combination Sum II', topic: 'Backtracking', difficulty: 'Medium', solved: false, attemptCount: 2, confidence: 2 },
+  { id: 'p61', title: 'Max Sum of Rectangle No Larger Than K', topic: 'DP', difficulty: 'Hard', solved: false, attemptCount: 1, confidence: 1, isPremium: true },
+  { id: 'p62', title: '2D Range Sum Query - Mutable', topic: 'Segment Tree', difficulty: 'Hard', solved: false, attemptCount: 1, confidence: 1, isPremium: true },
+  { id: 'p63', title: 'Maximum Sum of 3 Non-Overlapping Subarrays', topic: 'DP', difficulty: 'Hard', solved: false, attemptCount: 1, confidence: 1, isPremium: true },
+  { id: 'p64', title: 'Split Array Largest Sum', topic: 'Binary Search', difficulty: 'Hard', solved: false, attemptCount: 2, confidence: 1, isPremium: true },
+  { id: 'p65', title: 'Maximum Subarray Sum With One Deletion', topic: 'DP', difficulty: 'Medium', solved: false, attemptCount: 2, confidence: 2, isPremium: true },
 ];
 
 // ========== 7-Day Performance Trend ==========
