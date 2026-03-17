@@ -332,12 +332,12 @@ export async function evaluateMockTest(payload: {
 }
 
 export const fetchExternalStats = async () => {
-  const res = await api.get('/api/stats/external');
+  const res = await api.get('/stats/external');
   return res.data;
 }
 
 export const syncExternalStats = async (payload: { leetcode_username?: string, gfg_username?: string }) => {
-  const res = await api.post('/api/stats/sync', payload);
+  const res = await api.post('/stats/sync', payload);
   return res.data;
 }
 

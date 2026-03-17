@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
-import { Bookmark, CheckCircle2, Clock3, MemoryStick, Play, Send, TriangleAlert } from 'lucide-react';
+import { Bookmark, CheckCircle2, Clock3, Maximize2, MemoryStick, Minimize2, Play, Send, TriangleAlert } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 
 import { AuthRequiredCard } from '../components/auth/AuthRequiredCard';
@@ -53,8 +53,10 @@ export default function ProblemWorkspace() {
   const [roadmapDayTag, setRoadmapDayTag] = useState<number | null>(null);
   const [postSubmitInsight, setPostSubmitInsight] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'description' | 'submissions' | 'code-review' | 'editorial'>('description');
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const splitContainerRef = useRef<HTMLDivElement | null>(null);
+  const arenaRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!problemId) return;
@@ -99,6 +101,26 @@ export default function ProblemWorkspace() {
     window.addEventListener('mousemove', move);
     window.addEventListener('mouseup', up);
   };
+
+  const toggleFullscreen = useCallback(async () => {
+    try {
+      if (!document.fullscreenElement) {
+        await (arenaRef.current ?? document.documentElement).requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch {
+      // Ignore fullscreen errors and keep normal layout.
+    }
+  }, []);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
 
   const onRun = useCallback(async () => {
     if (!isAuthenticated) {
@@ -183,7 +205,7 @@ export default function ProblemWorkspace() {
   }
 
   return (
-    <div className="space-y-4">
+    <div ref={arenaRef} className="space-y-4">
       {!isAuthenticated ? (
         <AuthRequiredCard
           title="Login Required For Run And Submit"
@@ -205,6 +227,13 @@ export default function ProblemWorkspace() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => void toggleFullscreen()}
+            className="rounded-lg border border-[#1F2937] bg-[#111827] p-2 text-[#CBD5E1]"
+            title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+          >
+            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </button>
           {problem.solved ? <CheckCircle2 className="h-5 w-5 text-emerald-400" /> : null}
           <button
             onClick={() => void onToggleBookmark()}

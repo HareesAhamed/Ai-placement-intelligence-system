@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
+import { useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Editor from "@monaco-editor/react";
-import { Play, Send, Clock } from "lucide-react";
+import { Play, Send, Clock, Maximize2, Minimize2 } from "lucide-react";
 
 import { executeCode, api } from "../services/api";
 import { Card } from "../components/ui/Card";
@@ -33,6 +34,7 @@ export default function AssessmentArena() {
   const [input] = useState("");
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -81,18 +83,35 @@ export default function AssessmentArena() {
     }
   }, [activeProblemId, language]);
 
+  const handleSubmitAssessment = useCallback(async () => {
+    try {
+      await api.post(`/assessment/${sessionId}/finalize`);
+      navigate("/assessment");
+    } catch (err) {
+      console.error(err);
+    }
+  }, [navigate, sessionId]);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          handleSubmitAssessment();
+          void handleSubmitAssessment();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
+  }, [handleSubmitAssessment]);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
   }, []);
 
   const formatTime = (seconds: number) => {
@@ -137,12 +156,15 @@ export default function AssessmentArena() {
     }
   };
 
-  const handleSubmitAssessment = async () => {
+  const toggleFullscreen = async () => {
     try {
-      await api.post(`/assessment/${sessionId}/finalize`);
-      navigate("/assessment");
-    } catch (err) {
-      console.error(err);
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch {
+      // Ignore fullscreen errors and continue with normal view.
     }
   };
 
@@ -154,6 +176,17 @@ export default function AssessmentArena() {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-white">DSA Assessment</h2>
         <div className="flex items-center gap-4">
+          <button
+            onClick={toggleFullscreen}
+            className="p-2 rounded-lg border border-[#334155] text-gray-200 hover:bg-[#0F172A]"
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="w-4 h-4" />
+            ) : (
+              <Maximize2 className="w-4 h-4" />
+            )}
+          </button>
           <div className="flex items-center gap-2 text-red-400 font-mono text-lg bg-red-400/10 px-4 py-1.5 rounded-lg border border-red-400/20">
             <Clock className="w-5 h-5" />
             {formatTime(timeLeft)}
