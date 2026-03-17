@@ -1,10 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import get_current_user
+from app.models.problem import Problem
+from app.models.submission import Submission
 from app.models.user import User
-from app.schemas.roadmap import RoadmapDayRead, RoadmapRead, RoadmapRefreshResponse
+from app.schemas.roadmap import (
+    RoadmapDayDetailResponse,
+    RoadmapDayProblemItem,
+    RoadmapDayRead,
+    RoadmapRead,
+    RoadmapRefreshResponse,
+)
 from app.services.roadmap_engine import roadmap_engine
 
 router = APIRouter(prefix="/roadmap", tags=["roadmap"])
@@ -98,4 +107,73 @@ def complete_roadmap_day(
         estimated_minutes=day.estimated_minutes,
         task_type=day.task_type,
         is_completed=day.is_completed,
+    )
+
+
+@router.get("/day/{day_id}/details", response_model=RoadmapDayDetailResponse)
+def get_roadmap_day_details(
+    day_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> RoadmapDayDetailResponse:
+    plan = roadmap_engine.get_active_plan(db, current_user.id)
+    if not plan:
+        raise HTTPException(status_code=404, detail="No roadmap found")
+
+    day = next((item for item in plan.days if item.id == day_id), None)
+    if not day:
+        raise HTTPException(status_code=404, detail="Roadmap day not found")
+
+    accepted_problem_ids = {
+        row[0]
+        for row in db.execute(
+            select(Submission.problem_id).where(
+                and_(
+                    Submission.user_id == current_user.id,
+                    Submission.status == "Accepted",
+                )
+            )
+        ).all()
+    }
+
+    candidates = list(
+        db.scalars(
+            select(Problem)
+            .where(Problem.topic == day.topic)
+            .order_by(Problem.id.asc())
+        ).all()
+    )
+    problems = candidates[: max(1, day.problems_count)]
+
+    continue_problem = next((item for item in problems if item.id not in accepted_problem_ids), None)
+    if not continue_problem and problems:
+        continue_problem = problems[0]
+
+    status = "Pending"
+    if day.is_completed:
+        status = "Completed"
+    elif continue_problem:
+        status = "In Progress"
+
+    return RoadmapDayDetailResponse(
+        id=day.id,
+        day_number=day.day_number,
+        week_number=day.week_number,
+        topic=day.topic,
+        estimated_minutes=day.estimated_minutes,
+        task_type=day.task_type,
+        tutorial_title=day.tutorial_title,
+        tutorial_link=day.tutorial_link,
+        status=status,
+        continue_problem_id=continue_problem.id if continue_problem else None,
+        problems=[
+            RoadmapDayProblemItem(
+                id=item.id,
+                title=item.title,
+                difficulty=item.difficulty,
+                topic=item.topic,
+                tutorial_link=item.tutorial_link,
+            )
+            for item in problems
+        ],
     )

@@ -31,3 +31,25 @@ class RoadmapRead(BaseModel):
 class RoadmapRefreshResponse(BaseModel):
     roadmap: RoadmapRead
     insights: list[str]
+
+
+class RoadmapDayProblemItem(BaseModel):
+    id: int
+    title: str
+    difficulty: str
+    topic: str
+    tutorial_link: str | None = None
+
+
+class RoadmapDayDetailResponse(BaseModel):
+    id: int
+    day_number: int
+    week_number: int
+    topic: str
+    estimated_minutes: int
+    task_type: str
+    tutorial_title: str | None = None
+    tutorial_link: str | None = None
+    status: str
+    continue_problem_id: int | None = None
+    problems: list[RoadmapDayProblemItem]

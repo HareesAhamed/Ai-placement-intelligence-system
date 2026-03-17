@@ -307,8 +307,14 @@ export default function Roadmap() {
                   disabled={launchingTask}
                   className="rounded-lg bg-[#1D4ED8] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
                 >
-                  {launchingTask ? 'Opening Compiler...' : 'Do Task In Compiler'}
+                  {launchingTask ? 'Opening Compiler...' : 'Continue Task'}
                 </button>
+                <Link
+                  to={`/roadmap/day/${selectedDay.id}`}
+                  className="rounded-lg border border-[#334155] bg-[#111827] px-3 py-2 text-xs font-semibold text-[#E2E8F0]"
+                >
+                  View Details
+                </Link>
                 <Link
                   to={`/tutorials?topic=${encodeURIComponent(selectedDay.topic)}`}
                   className="rounded-lg bg-[#2563EB] px-3 py-2 text-xs font-semibold text-white"

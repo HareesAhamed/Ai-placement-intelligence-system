@@ -21,6 +21,7 @@ import {
   fetchRoadmap,
   fetchSubmissions,
   fetchTopicStrength,
+  runAIAnalysis,
 } from '../services/api';
 
 export default function Dashboard() {
@@ -33,6 +34,7 @@ export default function Dashboard() {
   const [topicStrength, setTopicStrength] = useState<Array<{ topic: string; attempts: number; accuracy: number; classification: string }>>([]);
   const [companyReadiness, setCompanyReadiness] = useState<Record<string, number>>({});
   const [recentSubmissions, setRecentSubmissions] = useState<Array<{ created_at: string; status: string; problem_id: number }>>([]);
+  const [analysisNote, setAnalysisNote] = useState('');
 
   const refreshDashboard = useCallback(async () => {
     if (!isAuthenticated) {
@@ -162,6 +164,23 @@ export default function Dashboard() {
       <div className="flex justify-end">
         <div className="flex items-center gap-2">
           <button
+            onClick={() => {
+              if (!isAuthenticated) {
+                openAuthModal('login');
+                return;
+              }
+              void (async () => {
+                const result = await runAIAnalysis().catch(() => null);
+                if (!result) return;
+                setAnalysisNote(result.roadmap_refreshed ? 'AI analysis completed and roadmap refreshed.' : 'AI analysis completed.');
+                void refreshDashboard();
+              })();
+            }}
+            className="inline-flex items-center gap-2 rounded-lg border border-[#1F2937] bg-[#0F172A] px-3 py-2 text-xs font-semibold text-[#E5E7EB]"
+          >
+            Run AI Analysis
+          </button>
+          <button
             onClick={() => void onResumeRoadmap()}
             disabled={resumingRoadmap}
             className="inline-flex items-center gap-2 rounded-lg bg-[#1D4ED8] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
@@ -184,6 +203,12 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      {analysisNote ? (
+        <Card hover={false} className="border-[#1D4ED8]/40 bg-[#1D4ED8]/10 text-sm text-[#BFDBFE]">
+          {analysisNote}
+        </Card>
+      ) : null}
 
       {/* Top Stats Row */}
       <motion.div variants={staggerItem} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">

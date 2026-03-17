@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import and_, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.problem import Problem
-from app.models.submission import Submission
 from app.models.user import User
 from app.schemas.mock_test import (
     MockTestCategoryResponse,
@@ -19,7 +16,9 @@ from app.schemas.mock_test import (
     MockTestStartRequest,
     MockTestStartResponse,
 )
+from app.services.analysis_engine import analysis_engine
 from app.services.analytics_engine import analytics_engine
+from app.services.mock_engine import mock_engine
 
 router = APIRouter(prefix="/mock-tests", tags=["mock-tests"])
 
@@ -130,42 +129,42 @@ def evaluate_mock_test(
     question_ids = list(dict.fromkeys(payload.problem_ids))
     if len(question_ids) == 0:
         raise HTTPException(status_code=400, detail="No questions found for evaluation")
-
-    accepted_submissions = list(
-        db.scalars(
-            select(Submission)
-            .where(
-                and_(
-                    Submission.user_id == current_user.id,
-                    Submission.problem_id.in_(question_ids),
-                    Submission.status == "Accepted",
-                    Submission.created_at >= payload.started_at,
-                )
-            )
-            .order_by(Submission.created_at.asc())
-        ).all()
-    )
-
-    solved_ids = {submission.problem_id for submission in accepted_submissions}
-    solved_count = len(solved_ids)
-    total = len(question_ids)
-    score = int(round((solved_count / total) * 100)) if total else 0
+    metrics = mock_engine.compute_metrics(db, current_user.id, payload.started_at, question_ids)
 
     topic_strength = analytics_engine.topic_strength(db, current_user.id, [])
     strong_topics = [item["topic"] for item in topic_strength if item["classification"] == "strong"]
     weak_topics = [item["topic"] for item in topic_strength if item["classification"] == "weak"]
 
-    now = datetime.now(timezone.utc)
-    started_at = payload.started_at.replace(tzinfo=timezone.utc) if payload.started_at.tzinfo is None else payload.started_at
-    duration_minutes = max(1, int((now - started_at).total_seconds() // 60))
+    analysis_engine.store_mock_test(
+        db,
+        current_user.id,
+        {
+            "mode": payload.mode,
+            "category": payload.category,
+            **metrics,
+            "weak_areas": weak_topics[:3],
+        },
+    )
+    analysis_engine.log_activity(
+        db,
+        current_user.id,
+        "mock_test_completion",
+        {
+            "mode": payload.mode,
+            "category": payload.category,
+            "score": metrics["score"],
+            "accuracy": metrics["accuracy"],
+        },
+    )
+    analysis_engine.analyze_user(db, current_user.id, trigger="mock_test_completion", auto_refresh=True)
 
     return MockTestEvaluateResponse(
         mode=payload.mode,
         category=payload.category,
-        score=score,
-        solved_count=solved_count,
-        total_questions=total,
-        time_taken_minutes=duration_minutes,
+        score=int(metrics["score"]),
+        solved_count=int(metrics["solved_count"]),
+        total_questions=int(metrics["total_questions"]),
+        time_taken_minutes=int(metrics["time_taken_minutes"]),
         strengths=strong_topics[:3] if strong_topics else ["Consistency in solving attempts"],
         weaknesses=weak_topics[:3] if weak_topics else ["Increase medium/hard mock completion"],
     )

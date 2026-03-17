@@ -23,9 +23,13 @@ import type {
   TutorialItem,
   MockTestStartResponse,
   MockTestEvaluateResponse,
+  AIAnalysisResult,
+  CodeReviewResult,
+  EditorialResult,
+  RoadmapDayDetail,
 } from '../types/coding';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
 export const TOKEN_KEY = 'prepiq_auth_token';
 export const AUTH_EMAIL_KEY = 'prepiq_auth_email';
 
@@ -235,6 +239,11 @@ export async function refreshRoadmap(): Promise<{ roadmap: RoadmapPlan; insights
   return res.data;
 }
 
+export async function fetchRoadmapDayDetails(dayId: number): Promise<RoadmapDayDetail> {
+  const res = await api.get<RoadmapDayDetail>(`/roadmap/day/${dayId}/details`);
+  return res.data;
+}
+
 export async function completeRoadmapDay(dayId: number): Promise<void> {
   await api.post(`/roadmap/day/${dayId}/complete`);
 }
@@ -271,6 +280,30 @@ export async function fetchTutorials(): Promise<TutorialItem[]> {
 
 export async function fetchTutorial(topic: string): Promise<TutorialItem> {
   const res = await api.get<TutorialItem>(`/tutorials/${topic}`);
+  return res.data;
+}
+
+export async function runAIAnalysis(): Promise<AIAnalysisResult> {
+  const res = await api.post<AIAnalysisResult>('/ai/analyze');
+  return res.data;
+}
+
+export async function fetchProblemCodeReview(payload: {
+  problem_id: number;
+  language: 'cpp' | 'python' | 'java' | 'javascript';
+  code: string;
+  status: string;
+}): Promise<CodeReviewResult> {
+  const res = await api.post<CodeReviewResult>(`/problems/${payload.problem_id}/code-review`, {
+    language: payload.language,
+    code: payload.code,
+    status: payload.status,
+  });
+  return res.data;
+}
+
+export async function fetchProblemEditorial(problemId: number): Promise<EditorialResult> {
+  const res = await api.get<EditorialResult>(`/problems/${problemId}/editorial`);
   return res.data;
 }
 

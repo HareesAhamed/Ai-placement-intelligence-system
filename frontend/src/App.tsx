@@ -8,6 +8,8 @@ import ProblemWorkspace from './pages/ProblemWorkspace';
 import Contests from './pages/Contests';
 import Profile from './pages/Profile';
 import Tutorials from './pages/Tutorials';
+import MockTestPage from './pages/MockTestPage';
+import RoadmapDetail from './pages/RoadmapDetail';
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
           <Route path="/problems" element={<Problems />} />
           <Route path="/problems/:problemId" element={<ProblemWorkspace />} />
           <Route path="/roadmap" element={<Roadmap />} />
+          <Route path="/roadmap/day/:dayId" element={<RoadmapDetail />} />
+          <Route path="/mock-test" element={<MockTestPage />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/tutorials" element={<Tutorials />} />
           <Route path="/contests" element={<Contests />} />

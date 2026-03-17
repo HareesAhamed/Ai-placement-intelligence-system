@@ -12,6 +12,8 @@ from app.models.submission import Submission
 from app.models.user import User
 from app.schemas.analytics import AnalyticsSummary
 from app.schemas.submission import SubmissionCreate, SubmissionRead, SubmissionResult
+from app.services.analysis_engine import analysis_engine
+from app.services.roadmap_engine import roadmap_engine
 from app.services.testcase_runner import testcase_runner
 
 router = APIRouter()
@@ -91,6 +93,34 @@ def create_submission(
     db.refresh(submission)
     _recompute_analytics(db, current_user.id)
 
+    analysis_engine.log_activity(
+        db,
+        current_user.id,
+        "problem_submission",
+        {
+            "problem_id": payload.problem_id,
+            "language": payload.language,
+            "status": result.status,
+            "runtime_ms": result.max_runtime_ms,
+        },
+    )
+
+    roadmap_message = "Roadmap progress unchanged"
+    if result.status == "Accepted":
+        updated = roadmap_engine.mark_progress_for_problem(db, current_user.id, payload.problem_id)
+        roadmap_message = "Roadmap task auto-marked completed" if updated else "Roadmap matched task not found"
+
+    ai_summary = analysis_engine.analyze_user(
+        db,
+        current_user.id,
+        trigger="problem_submission",
+        auto_refresh=True,
+    )
+    weak_topics = ai_summary.get("weak_topics") or []
+    topic_message = (
+        f"Weak areas updated: {', '.join(weak_topics[:2])}" if weak_topics else "Topic mastery updated"
+    )
+
     return SubmissionResult(
         submission_id=submission.id,
         status=submission.status,
@@ -98,6 +128,8 @@ def create_submission(
         total=submission.total_testcases,
         runtime_ms=submission.runtime_ms,
         memory_kb=submission.memory_kb,
+        topic_mastery_update=topic_message,
+        roadmap_progress_update=roadmap_message,
     )
 
 

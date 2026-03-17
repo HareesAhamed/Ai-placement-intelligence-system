@@ -19,6 +19,7 @@ import type {
 } from '../types/coding';
 
 type TestMode = 'overall' | 'pattern' | 'company';
+type UIMode = TestMode | 'timed';
 
 type HistoryEntry = MockTestEvaluateResponse & {
   id: string;
@@ -33,13 +34,15 @@ export default function MockTest() {
     pattern_categories: [],
     company_categories: [],
   });
-  const [mode, setMode] = useState<TestMode>('overall');
+  const [mode, setMode] = useState<UIMode>('overall');
   const [category, setCategory] = useState('');
-  const [questionCount, setQuestionCount] = useState(10);
+  const [questionCount, setQuestionCount] = useState(3);
+  const [timeLimitMinutes, setTimeLimitMinutes] = useState(90);
   const [session, setSession] = useState<MockTestStartResponse | null>(null);
   const [result, setResult] = useState<MockTestEvaluateResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(0);
+  const [requestError, setRequestError] = useState('');
   const [history, setHistory] = useState<HistoryEntry[]>(() => {
     const raw = localStorage.getItem(HISTORY_KEY);
     if (!raw) return [];
@@ -71,6 +74,14 @@ export default function MockTest() {
     return () => window.clearInterval(interval);
   }, [session]);
 
+  useEffect(() => {
+    if (!session || !timeLimitMinutes || result) return;
+    const elapsed = Math.floor(timer / 60);
+    if (elapsed >= timeLimitMinutes) {
+      void onEvaluate();
+    }
+  }, [timer, timeLimitMinutes, session, result]);
+
   const selectableCategories = useMemo(() => {
     if (mode === 'pattern') return categories.pattern_categories;
     if (mode === 'company') return categories.company_categories;
@@ -93,13 +104,18 @@ export default function MockTest() {
     }
     setLoading(true);
     setResult(null);
+    setRequestError('');
     try {
+      const apiMode: TestMode = mode === 'timed' ? 'overall' : mode;
+      const requestedCount = mode === 'timed' ? 5 : questionCount;
       const started = await startMockTest({
-        mode,
-        category: mode === 'overall' ? undefined : category,
-        question_count: questionCount,
+        mode: apiMode,
+        category: apiMode === 'overall' ? undefined : category,
+        question_count: Math.max(2, Math.min(5, requestedCount)),
       });
       setSession(started);
+    } catch {
+      setRequestError('Unable to start mock test. Verify backend is running and login session is valid.');
     } finally {
       setLoading(false);
     }
@@ -108,6 +124,7 @@ export default function MockTest() {
   const onEvaluate = async () => {
     if (!session) return;
     setLoading(true);
+    setRequestError('');
     try {
       const evaluated = await evaluateMockTest({
         mode: session.mode,
@@ -124,6 +141,8 @@ export default function MockTest() {
       const updated = [entry, ...history].slice(0, 12);
       setHistory(updated);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    } catch {
+      setRequestError('Unable to evaluate mock test. Submit attempts first and check API connectivity.');
     } finally {
       setLoading(false);
     }
@@ -159,6 +178,12 @@ export default function MockTest() {
         }
       />
 
+      {requestError ? (
+        <Card hover={false} className="border border-[#7F1D1D]/40 bg-[#7F1D1D]/20 text-sm text-[#FCA5A5]">
+          {requestError}
+        </Card>
+      ) : null}
+
       {!session ? (
         <Card hover={false} className="space-y-4 border-[#222A33] bg-[#151B22]">
           <div className="grid gap-3 md:grid-cols-3">
@@ -189,9 +214,19 @@ export default function MockTest() {
             >
               <span className="inline-flex items-center gap-2"><Building2 className="h-4 w-4" /> Company-wise</span>
             </button>
+            <button
+              onClick={() => {
+                setMode('timed');
+                setCategory('');
+                setQuestionCount(5);
+              }}
+              className={`rounded-xl border px-4 py-3 text-sm ${mode === 'timed' ? 'border-[#3B82F6]/60 bg-[#1D4ED8]/20 text-[#BFDBFE]' : 'border-[#1F2937] bg-[#0B1120] text-[#CBD5E1]'}`}
+            >
+              <span className="inline-flex items-center gap-2"><Timer className="h-4 w-4" /> Timed Full Mock</span>
+            </button>
           </div>
 
-          {mode !== 'overall' ? (
+          {mode !== 'overall' && mode !== 'timed' ? (
             <select
               value={category}
               onChange={(event) => setCategory(event.target.value)}
@@ -208,12 +243,23 @@ export default function MockTest() {
             <label className="text-sm text-[#CBD5E1]">Question Count</label>
             <input
               type="number"
-              min={3}
-              max={20}
+              min={2}
+              max={5}
               value={questionCount}
-              onChange={(event) => setQuestionCount(Math.max(3, Math.min(20, Number(event.target.value))))}
+              onChange={(event) => setQuestionCount(Math.max(2, Math.min(5, Number(event.target.value))))}
+              disabled={mode === 'timed'}
               className="h-10 w-24 rounded-xl border border-[#1F2937] bg-[#0B1120] px-3 text-sm text-[#E2E8F0]"
             />
+            <label className="text-sm text-[#CBD5E1]">Time Limit</label>
+            <select
+              value={timeLimitMinutes}
+              onChange={(event) => setTimeLimitMinutes(Number(event.target.value))}
+              className="h-10 rounded-xl border border-[#1F2937] bg-[#0B1120] px-3 text-sm text-[#E2E8F0]"
+            >
+              <option value={60}>60 min</option>
+              <option value={90}>90 min</option>
+              <option value={120}>120 min</option>
+            </select>
             <button
               onClick={() => void onStart()}
               disabled={loading || ((mode === 'pattern' || mode === 'company') && !category)}
@@ -230,12 +276,12 @@ export default function MockTest() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-[#E5E7EB]">
-                  Active {session.mode} mock {session.category ? `• ${session.category}` : ''}
+                  Active {mode === 'timed' ? 'timed full' : session.mode} mock {session.category ? `• ${session.category}` : ''}
                 </p>
                 <p className="text-xs text-[#94A3B8]">Solve questions in Problem Workspace, then evaluate.</p>
               </div>
               <div className="inline-flex items-center gap-2 rounded-lg border border-[#334155] bg-[#0B1120] px-3 py-2 text-sm text-[#CBD5E1]">
-                <Timer className="h-4 w-4" /> {Math.floor(timer / 60)}m {timer % 60}s
+                <Timer className="h-4 w-4" /> {Math.floor(timer / 60)}m {timer % 60}s / {timeLimitMinutes}m
               </div>
             </div>
             <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">

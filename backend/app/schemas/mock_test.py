@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 class MockTestStartRequest(BaseModel):
     mode: str = Field(pattern="^(pattern|company|overall)$")
     category: str | None = None
-    question_count: int = Field(default=10, ge=3, le=20)
+    question_count: int = Field(default=3, ge=2, le=5)
 
 
 class MockTestProblemItem(BaseModel):

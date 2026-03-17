@@ -4,6 +4,8 @@ import { Bookmark, CheckCircle2, Clock3, MemoryStick, Play, Send, TriangleAlert 
 import { useParams } from 'react-router-dom';
 
 import { AuthRequiredCard } from '../components/auth/AuthRequiredCard';
+import { CodeReviewPanel } from '../components/problems/CodeReviewPanel';
+import { EditorialTab } from '../components/problems/EditorialTab';
 import { ProblemEditor } from '../components/problems/ProblemEditor';
 import { Card } from '../components/ui/Card';
 import { useAuth } from '../context/useAuth';
@@ -50,6 +52,7 @@ export default function ProblemWorkspace() {
   const [split, setSplit] = useState(47);
   const [roadmapDayTag, setRoadmapDayTag] = useState<number | null>(null);
   const [postSubmitInsight, setPostSubmitInsight] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'description' | 'submissions' | 'code-review' | 'editorial'>('description');
 
   const splitContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -148,7 +151,7 @@ export default function ProblemWorkspace() {
         const topicItem = topicStrength.topics.find((topic) => topic.topic.toLowerCase() === problem.topic.toLowerCase());
         const topicImpact = topicItem ? `${topicItem.classification} (${topicItem.accuracy}% accuracy)` : 'updating';
         setPostSubmitInsight(
-          `Roadmap progress ${progress.roadmap_completion}% • Topic mastery impact for ${problem.topic}: ${topicImpact}.`
+          `${result.roadmap_progress_update ?? `Roadmap progress ${progress.roadmap_completion}%`} • ${result.topic_mastery_update ?? `Topic mastery impact for ${problem.topic}: ${topicImpact}`}.`
         );
       } catch {
         setPostSubmitInsight('Submission recorded. Analytics refresh is temporarily unavailable.');
@@ -341,6 +344,55 @@ export default function ProblemWorkspace() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
+        <Card hover={false} className="xl:col-span-2 border-[#1F2937] bg-[#0B1220]">
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: 'description', label: 'Description' },
+              { key: 'submissions', label: 'Submissions' },
+              { key: 'code-review', label: 'Code Review' },
+              { key: 'editorial', label: 'Editorial' },
+            ].map((tab) => (
+              <button
+                type="button"
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key as 'description' | 'submissions' | 'code-review' | 'editorial')}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                  activeTab === tab.key ? 'bg-[#1D4ED8] text-white' : 'border border-[#334155] bg-[#111827] text-[#CBD5E1]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          {activeTab === 'description' ? <p className="mt-3 whitespace-pre-wrap text-sm text-[#CBD5E1]">{problem.description}</p> : null}
+          {activeTab === 'submissions' ? (
+            <div className="mt-3 max-h-52 overflow-auto rounded-xl border border-[#1F2937] bg-[#0F172A]">
+              {submissions.length === 0 ? (
+                <p className="p-3 text-xs text-[#94A3B8]">No submissions yet for this problem.</p>
+              ) : (
+                submissions.slice(0, 15).map((item) => (
+                  <div key={item.id} className="flex items-center justify-between border-t border-[#1F2937] px-3 py-2 text-xs text-[#CBD5E1] first:border-t-0">
+                    <span>{item.language.toUpperCase()}</span>
+                    <span>{item.status}</span>
+                    <span>{item.runtime_ms ?? '-'} ms</span>
+                    <span>{new Date(item.created_at).toLocaleString()}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : null}
+          {activeTab === 'code-review' ? (
+            <div className="mt-3">
+              <CodeReviewPanel problemId={problem.id} language={language} code={code} status={status} />
+            </div>
+          ) : null}
+          {activeTab === 'editorial' ? (
+            <div className="mt-3">
+              <EditorialTab problemId={problem.id} />
+            </div>
+          ) : null}
+        </Card>
+
         <Card hover={false} className="space-y-3 border-[#1F2937] bg-[#0B1220]">
           <h3 className="text-sm font-semibold uppercase tracking-wide text-[#94A3B8]">Test Cases</h3>
           <textarea

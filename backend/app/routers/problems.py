@@ -8,7 +8,16 @@ from app.models.bookmark import ProblemBookmark
 from app.models.problem import Problem
 from app.models.submission import Submission
 from app.models.user import User
-from app.schemas.problem import BookmarkResponse, ProblemCreate, ProblemListItem, ProblemRead
+from app.schemas.problem import (
+    BookmarkResponse,
+    CodeReviewRequest,
+    CodeReviewResponse,
+    EditorialResponse,
+    ProblemCreate,
+    ProblemListItem,
+    ProblemRead,
+)
+from app.services.code_review_service import code_review_service
 
 router = APIRouter()
 
@@ -124,6 +133,7 @@ def get_problem(
         title=problem.title,
         difficulty=problem.difficulty,
         topic=problem.topic,
+        tutorial_link=problem.tutorial_link,
         topic_tags=problem.topic_tags or ([problem.topic] if problem.topic else []),
         is_premium=problem.is_premium,
         description=problem.description,
@@ -146,6 +156,7 @@ def create_problem(payload: ProblemCreate, db: Session = Depends(get_db)) -> Pro
         title=payload.title,
         difficulty=payload.difficulty,
         topic=payload.topic,
+        tutorial_link=payload.tutorial_link,
         topic_tags=payload.topic_tags,
         is_premium=payload.is_premium,
         description=payload.description,
@@ -189,3 +200,31 @@ def toggle_bookmark(
 
     db.commit()
     return BookmarkResponse(problem_id=problem_id, bookmarked=bookmarked)
+
+
+@router.post("/{problem_id}/code-review", response_model=CodeReviewResponse)
+def get_code_review(
+    problem_id: int,
+    payload: CodeReviewRequest,
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> CodeReviewResponse:
+    problem = db.get(Problem, problem_id)
+    if not problem:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Problem not found")
+
+    review = code_review_service.review(problem, payload.code, payload.language, payload.status)
+    return CodeReviewResponse(**review)
+
+
+@router.get("/{problem_id}/editorial", response_model=EditorialResponse)
+def get_editorial(
+    problem_id: int,
+    db: Session = Depends(get_db),
+) -> EditorialResponse:
+    problem = db.get(Problem, problem_id)
+    if not problem:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Problem not found")
+
+    editorial = code_review_service.editorial(problem)
+    return EditorialResponse(**editorial)

@@ -51,6 +51,8 @@ export interface SubmissionResult {
   total: number;
   runtime_ms: number | null;
   memory_kb: number | null;
+  topic_mastery_update?: string | null;
+  roadmap_progress_update?: string | null;
 }
 
 export interface SubmissionItem {
@@ -161,6 +163,28 @@ export interface RoadmapDay {
   is_completed: boolean;
 }
 
+export interface RoadmapDayProblemItem {
+  id: number;
+  title: string;
+  difficulty: string;
+  topic: string;
+  tutorial_link: string | null;
+}
+
+export interface RoadmapDayDetail {
+  id: number;
+  day_number: number;
+  week_number: number;
+  topic: string;
+  estimated_minutes: number;
+  task_type: string;
+  tutorial_title: string | null;
+  tutorial_link: string | null;
+  status: 'Completed' | 'In Progress' | 'Pending' | string;
+  continue_problem_id: number | null;
+  problems: RoadmapDayProblemItem[];
+}
+
 export interface RoadmapPlan {
   id: number;
   start_date: string;
@@ -217,4 +241,28 @@ export interface MockTestEvaluateResponse {
   time_taken_minutes: number;
   strengths: string[];
   weaknesses: string[];
+}
+
+export interface CodeReviewResult {
+  verdict: string;
+  time_complexity: string;
+  space_complexity: string;
+  optimal_solution: string;
+  improvements: string[];
+  alternative_approach: string;
+}
+
+export interface EditorialResult {
+  concept_explanation: string;
+  step_by_step: string[];
+  optimized_code: string;
+  tutorial_link: string | null;
+}
+
+export interface AIAnalysisResult {
+  trigger: string;
+  weak_topics: string[];
+  readiness: Record<string, number>;
+  roadmap_refreshed: boolean;
+  refresh_error: string | null;
 }

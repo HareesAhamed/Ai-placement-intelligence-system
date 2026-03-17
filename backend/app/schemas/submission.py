@@ -31,3 +31,5 @@ class SubmissionResult(BaseModel):
     total: int
     runtime_ms: int | None
     memory_kb: int | None
+    topic_mastery_update: str | None = None
+    roadmap_progress_update: str | None = None

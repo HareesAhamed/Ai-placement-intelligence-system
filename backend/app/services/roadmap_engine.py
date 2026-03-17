@@ -388,6 +388,52 @@ class RoadmapEngine:
         db.refresh(day)
         return day
 
+    def mark_progress_for_problem(self, db: Session, user_id: int, problem_id: int) -> bool:
+        plan = self.get_active_plan(db, user_id)
+        if not plan:
+            return False
+
+        problem = db.get(Problem, problem_id)
+        if not problem:
+            return False
+
+        topic = problem.topic.strip().lower()
+        target_day = next(
+            (
+                day
+                for day in sorted(plan.days, key=lambda item: item.day_number)
+                if day.task_type == "practice" and not day.is_completed and day.topic.strip().lower() == topic
+            ),
+            None,
+        )
+        if not target_day:
+            return False
+
+        target_day.is_completed = True
+
+        weekly_review_days = [day for day in plan.days if day.task_type == "weekly-review"]
+        for review_day in weekly_review_days:
+            week_practice_days = [
+                item
+                for item in plan.days
+                if item.week_number == review_day.week_number and item.task_type == "practice"
+            ]
+            if week_practice_days and all(item.is_completed for item in week_practice_days):
+                review_day.is_completed = True
+
+        db.commit()
+        return True
+
+    def sync_progress_for_recent_accept(self, db: Session, user_id: int, problem_id: int | None = None) -> None:
+        if problem_id is not None:
+            self.mark_progress_for_problem(db, user_id, problem_id)
+            return
+
+        plan = self.get_active_plan(db, user_id)
+        if not plan:
+            return
+        self._sync_completion_from_behavior(db, plan)
+
     def _sync_completion_from_behavior(self, db: Session, plan: RoadmapPlan) -> None:
         accepted_submissions = list(
             db.scalars(

@@ -12,6 +12,7 @@ class ProblemBase(BaseModel):
     title: str
     difficulty: str
     topic: str
+    tutorial_link: str | None = None
     topic_tags: list[str] = []
     is_premium: bool = False
     description: str
@@ -53,3 +54,25 @@ class ProblemListItem(BaseModel):
 class BookmarkResponse(BaseModel):
     problem_id: int
     bookmarked: bool
+
+
+class CodeReviewRequest(BaseModel):
+    language: str
+    code: str
+    status: str = "Unknown"
+
+
+class CodeReviewResponse(BaseModel):
+    verdict: str
+    time_complexity: str
+    space_complexity: str
+    optimal_solution: str
+    improvements: list[str]
+    alternative_approach: str
+
+
+class EditorialResponse(BaseModel):
+    concept_explanation: str
+    step_by_step: list[str]
+    optimized_code: str
+    tutorial_link: str | None = None

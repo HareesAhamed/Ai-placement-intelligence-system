@@ -2,17 +2,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy import text
+from sqlalchemy import select
+import re
 
 from app.config import get_cors_origins, get_settings
 from app.database import Base, SessionLocal, engine
 import app.models  # noqa: F401
 from app.routers import (
+    ai_router,
     analytics,
     assessment,
     auth,
     contests,
     execution,
-    mock_tests,
+    mock_router,
     platform_connectors,
     problems,
     roadmap,
@@ -21,6 +24,8 @@ from app.routers import (
     tutorials,
 )
 from app.services.contest_service import contest_service
+from app.services.analysis_engine import analysis_engine
+from app.models.user import User
 
 settings = get_settings()
 app = FastAPI(title=settings.app_name, debug=settings.app_debug)
@@ -34,6 +39,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def localhost_cors_fallback(request, call_next):
+    response = await call_next(request)
+    origin = request.headers.get("origin")
+    if (
+        origin
+        and re.match(r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$", origin)
+        and "access-control-allow-origin" not in response.headers
+    ):
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Vary"] = "Origin"
+    return response
 
 
 @app.on_event("startup")
@@ -74,8 +94,18 @@ def on_startup() -> None:
         finally:
             db.close()
 
+    def weekly_ai_refresh_job() -> None:
+        db = SessionLocal()
+        try:
+            users = list(db.scalars(select(User)).all())
+            for user in users:
+                analysis_engine.analyze_user(db, user.id, trigger="weekly", auto_refresh=True)
+        finally:
+            db.close()
+
     if not scheduler.running:
         scheduler.add_job(sync_contests_job, "cron", hour=settings.contest_sync_hour_utc, id="contest_daily_sync", replace_existing=True)
+        scheduler.add_job(weekly_ai_refresh_job, "cron", day_of_week="mon", hour=3, id="weekly_ai_refresh", replace_existing=True)
         scheduler.start()
     sync_contests_job()
 
@@ -102,4 +132,5 @@ app.include_router(assessment.router)
 app.include_router(roadmap.router)
 app.include_router(analytics.router)
 app.include_router(tutorials.router)
-app.include_router(mock_tests.router)
+app.include_router(mock_router.router)
+app.include_router(ai_router.router)
