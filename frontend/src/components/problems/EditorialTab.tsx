@@ -7,9 +7,10 @@ import type { EditorialResult } from '../../types/coding';
 
 interface EditorialTabProps {
   problemId: number;
+  problemTopic: string;
 }
 
-export function EditorialTab({ problemId }: EditorialTabProps) {
+export function EditorialTab({ problemId, problemTopic }: EditorialTabProps) {
   const [loading, setLoading] = useState(false);
   const [editorial, setEditorial] = useState<EditorialResult | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -31,12 +32,9 @@ export function EditorialTab({ problemId }: EditorialTabProps) {
     })();
   }, [problemId]);
 
-  const handleTutorialNav = (link: string) => {
-    if (link.startsWith('http')) {
-      window.open(link, '_blank');
-    } else {
-      navigate(`/tutorials`);
-    }
+  const handleTutorialNav = (topic: string) => {
+    const topicQuery = encodeURIComponent(topic);
+    navigate(`/tutorials?topic=${topicQuery}&from=editorial&problemId=${problemId}`);
   };
 
   return (
@@ -69,15 +67,23 @@ export function EditorialTab({ problemId }: EditorialTabProps) {
             </div>
           )}
 
-          {editorial.tutorial_link ? (
-            <button 
-              onClick={() => handleTutorialNav(editorial.tutorial_link!)} 
-              className="flex items-center gap-2 mt-4 px-3 py-2 bg-[#2563EB]/10 text-blue-400 text-xs font-semibold rounded-lg hover:bg-[#2563EB]/20 transition"
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              onClick={() => handleTutorialNav(editorial.tutorial_topic ?? problemTopic)}
+              className="flex items-center gap-2 px-3 py-2 bg-[#2563EB]/10 text-blue-400 text-xs font-semibold rounded-lg hover:bg-[#2563EB]/20 transition"
             >
               <BookOpenText className="w-4 h-4" />
-              Deep Dive Tutorial
+              Open Tutorial In App
             </button>
-          ) : null}
+            {editorial.tutorial_link ? (
+              <button
+                onClick={() => window.open(editorial.tutorial_link!, '_blank')}
+                className="flex items-center gap-2 px-3 py-2 border border-[#1F2937] bg-[#111827] text-[#CBD5E1] text-xs font-semibold rounded-lg hover:border-[#334155] transition"
+              >
+                External Tutorial
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : null}
       {!loading && !editorial && !errorText ? (

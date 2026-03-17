@@ -6,7 +6,6 @@ import { AuthRequiredCard } from '../components/auth/AuthRequiredCard';
 import { TutorialViewer } from '../components/tutorials/TutorialViewer';
 import { Card } from '../components/ui/Card';
 import { useAuth } from '../context/useAuth';
-import { tutorialFallbacks } from '../data/tutorialFallbacks';
 import { fetchAnalyticsSummary, fetchProgressAnalytics, fetchRoadmap, fetchTutorials } from '../services/api';
 import type { TutorialItem } from '../types/coding';
 
@@ -28,7 +27,7 @@ export default function Tutorials() {
           fetchTutorials(),
           fetchRoadmap().catch(() => null),
         ]);
-        setTutorials(data.length > 0 ? data : tutorialFallbacks);
+        setTutorials(data);
 
         if (roadmap) {
           const topicMap: Record<string, number> = {};
@@ -40,7 +39,7 @@ export default function Tutorials() {
           setRoadmapDaysByTopic(topicMap);
         }
       } catch {
-        setTutorials(tutorialFallbacks);
+        setTutorials([]);
       } finally {
         setLoading(false);
       }

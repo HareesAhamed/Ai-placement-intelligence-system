@@ -171,6 +171,8 @@ export interface RoadmapDayProblemItem {
   difficulty: string;
   topic: string;
   tutorial_link: string | null;
+  problem_path: string;
+  editorial_path: string;
 }
 
 export interface RoadmapDayDetail {
@@ -182,8 +184,12 @@ export interface RoadmapDayDetail {
   task_type: string;
   tutorial_title: string | null;
   tutorial_link: string | null;
+  tutorial_path: string;
+  practice_path: string;
+  external_resource_link: string | null;
   status: 'Completed' | 'In Progress' | 'Pending' | string;
   continue_problem_id: number | null;
+  continue_problem_path: string | null;
   problems: RoadmapDayProblemItem[];
 }
 
@@ -246,18 +252,27 @@ export interface MockTestEvaluateResponse {
 }
 
 export interface CodeReviewResult {
+  review_source: 'gemini' | 'groq' | 'rule-based' | string;
   verdict: string;
+  summary: string;
   time_complexity: string;
   space_complexity: string;
   optimal_solution: string;
   improvements: string[];
   alternative_approach: string;
+  correctness_analysis: string;
+  complexity_analysis: string;
+  maintainability_analysis: string;
+  interview_readiness: string;
+  next_steps: string[];
+  confidence: number;
 }
 
 export interface EditorialResult {
   concept_explanation: string;
   step_by_step: string[];
   optimized_code: string;
+  tutorial_topic: string | null;
   tutorial_link: string | null;
 }
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { Bookmark, CheckCircle2, Clock3, Maximize2, MemoryStick, Minimize2, Play, Send, TriangleAlert } from 'lucide-react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 
 import { AuthRequiredCard } from '../components/auth/AuthRequiredCard';
 import { CodeReviewPanel } from '../components/problems/CodeReviewPanel';
@@ -37,6 +37,7 @@ const languageLabel: Array<{ value: CodeLanguage; label: string; monaco: string 
 
 export default function ProblemWorkspace() {
   const { problemId } = useParams<{ problemId: string }>();
+  const location = useLocation();
   const { isAuthenticated, openAuthModal } = useAuth();
 
   const [problem, setProblem] = useState<CodingProblem | null>(null);
@@ -84,6 +85,13 @@ export default function ProblemWorkspace() {
   useEffect(() => {
     setCode(STARTERS[language]);
   }, [language]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('tab') === 'editorial') {
+      setActiveTab('editorial');
+    }
+  }, [location.search]);
 
   const onDragDivider = useCallback((event: MouseEvent) => {
     if (!splitContainerRef.current) return;
@@ -365,7 +373,7 @@ export default function ProblemWorkspace() {
             ) : null}
 
             {activeTab === 'code-review' ? <CodeReviewPanel problemId={problem.id} language={language} code={code} status={status} /> : null}
-            {activeTab === 'editorial' ? <EditorialTab problemId={problem.id} /> : null}
+            {activeTab === 'editorial' ? <EditorialTab problemId={problem.id} problemTopic={problem.topic} /> : null}
           </div>
         </section>
 
