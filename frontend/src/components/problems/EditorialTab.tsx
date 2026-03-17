@@ -12,6 +12,7 @@ interface EditorialTabProps {
 export function EditorialTab({ problemId }: EditorialTabProps) {
   const [loading, setLoading] = useState(false);
   const [editorial, setEditorial] = useState<EditorialResult | null>(null);
+  const [errorText, setErrorText] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,6 +21,10 @@ export function EditorialTab({ problemId }: EditorialTabProps) {
       try {
         const result = await fetchProblemEditorial(problemId);
         setEditorial(result);
+        setErrorText(null);
+      } catch {
+        setEditorial(null);
+        setErrorText('Editorial is temporarily unavailable. Explore tutorials for this topic and retry.');
       } finally {
         setLoading(false);
       }
@@ -38,6 +43,7 @@ export function EditorialTab({ problemId }: EditorialTabProps) {
     <Card hover={false} className="space-y-4 border-[#1F2937] bg-[#0B1220]">
       <h3 className="text-sm font-semibold text-[#E2E8F0]">Editorial & Approaches</h3>
       {loading ? <p className="text-xs text-[#94A3B8]">Loading editorial...</p> : null}
+      {!loading && errorText ? <p className="text-xs text-[#FCA5A5]">{errorText}</p> : null}
       {editorial ? (
         <div className="space-y-4 text-sm text-[#CBD5E1]">
           <div className="bg-[#151B22] p-3 rounded-lg border border-[#1F2937]">
@@ -73,6 +79,9 @@ export function EditorialTab({ problemId }: EditorialTabProps) {
             </button>
           ) : null}
         </div>
+      ) : null}
+      {!loading && !editorial && !errorText ? (
+        <p className="text-xs text-[#94A3B8]">No editorial has been published for this problem yet.</p>
       ) : null}
     </Card>
   );

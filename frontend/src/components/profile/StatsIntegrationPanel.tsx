@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
 import { Card } from '../ui/Card';
 import { fetchExternalStats, syncExternalStats } from '../../services/api';
@@ -35,7 +36,7 @@ export function StatsIntegrationPanel() {
       await loadData();
       alert('Sync complete!');
     } catch (e) {
-      alert('Failed to sync via scraping. You might need to manually fallback.');
+      alert('Failed to sync via scraping. You might need to manually fallback.' + e);
     } finally {
       setLoading(false);
     }

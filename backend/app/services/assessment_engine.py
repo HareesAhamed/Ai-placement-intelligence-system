@@ -1,7 +1,7 @@
 import random
 from typing import List
 from sqlalchemy.orm import Session
-from sqlalchemy import select, and_, count, func
+from sqlalchemy import select, and_, func
 from app.models.problem import Problem
 from app.models.assessment import AssessmentSession, AssessmentAttempt
 from datetime import datetime

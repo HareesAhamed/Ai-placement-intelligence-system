@@ -79,14 +79,14 @@ const AssessmentPage: React.FC = () => {
           </div>
           <div className="space-y-4">
             <button 
-              onClick={() => navigate('/mock-tests')}
+              onClick={() => navigate('/mock-test')}
               className="w-full text-left px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             >
               <div className="font-semibold">Mock Tests</div>
               <div className="text-xs text-gray-500">Practice full-length tech interviews</div>
             </button>
             <button 
-              onClick={() => navigate('/onboarding?force=true')}
+              onClick={() => navigate('/onboarding')}
               className="w-full text-left px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             >
               <div className="font-semibold">Take Survey</div>

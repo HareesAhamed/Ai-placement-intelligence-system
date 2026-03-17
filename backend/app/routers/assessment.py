@@ -70,7 +70,9 @@ def get_assessment_sessions(
             "total_score": s.total_score,
             "accuracy": s.accuracy,
             "start_time": s.start_time,
-            "end_time": s.end_time
+            "end_time": s.end_time,
+            "duration_minutes": s.duration_minutes,
+            "metrics": s.metrics or {},
         } for s in sessions
     ]
 
