@@ -112,6 +112,8 @@ export interface SurveyPayload {
   preferred_language: 'cpp' | 'java' | 'python';
   preparation_start_date: string;
   goal_timeline_months: 3 | 6;
+  weak_areas?: string[];
+  confidence_level?: number;
 }
 
 export interface SurveyResponse extends SurveyPayload {
@@ -262,6 +264,8 @@ export interface EditorialResult {
 export interface AIAnalysisResult {
   trigger: string;
   weak_topics: string[];
+  learning_patterns?: string[];
+  recommendations?: Array<{title: string; reason: string; action_item: string; problem_id: number}>;
   readiness: Record<string, number>;
   roadmap_refreshed: boolean;
   refresh_error: string | null;

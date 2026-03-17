@@ -6,6 +6,7 @@ import { AuthRequiredCard } from '../components/auth/AuthRequiredCard';
 import { RadarChart } from '../components/profile/RadarChart';
 import { RoadmapCalendar } from '../components/profile/RoadmapCalendar';
 import { ProfileStats } from '../components/profile/ProfileStats';
+import { StatsIntegrationPanel } from '../components/profile/StatsIntegrationPanel';
 import { Card } from '../components/ui/Card';
 import { useAuth } from '../context/useAuth';
 import {
@@ -176,6 +177,7 @@ export default function Profile() {
 
   return (
     <div className="space-y-6">
+      {isAuthenticated ? <StatsIntegrationPanel /> : null}
       {!isAuthenticated ? (
         <AuthRequiredCard
           title="Login Required"

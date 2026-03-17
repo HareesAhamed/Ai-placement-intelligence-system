@@ -10,6 +10,8 @@ import Profile from './pages/Profile';
 import Tutorials from './pages/Tutorials';
 import MockTestPage from './pages/MockTestPage';
 import RoadmapDetail from './pages/RoadmapDetail';
+import AssessmentPage from './pages/AssessmentPage';
+import AssessmentArena from './pages/AssessmentArena';
 
 function App() {
   return (
@@ -19,8 +21,10 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/problems" element={<Problems />} />
           <Route path="/problems/:problemId" element={<ProblemWorkspace />} />
+          <Route path="/assessment/:sessionId/arena" element={<AssessmentArena />} />
           <Route path="/roadmap" element={<Roadmap />} />
           <Route path="/roadmap/day/:dayId" element={<RoadmapDetail />} />
+          <Route path="/assessment" element={<AssessmentPage />} />
           <Route path="/mock-test" element={<MockTestPage />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/tutorials" element={<Tutorials />} />

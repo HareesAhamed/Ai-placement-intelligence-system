@@ -18,9 +18,9 @@ import { AnimatePresence } from 'framer-motion';
 
 const navItems = [
   { label: 'Dashboard', path: '/', icon: Gauge },
+  { label: 'Assessment', path: '/assessment', icon: Timer },
   { label: 'Problems', path: '/problems', icon: CodeXml },
   { label: 'Roadmap', path: '/roadmap', icon: Compass },
-  { label: 'Mock Test', path: '/mock-test', icon: Timer },
   { label: 'Analytics', path: '/analytics', icon: PieChart },
   { label: 'Tutorials', path: '/tutorials', icon: BookOpenText },
   { label: 'Contests', path: '/contests', icon: Trophy },
