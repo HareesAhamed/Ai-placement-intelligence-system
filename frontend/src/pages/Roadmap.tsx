@@ -78,7 +78,8 @@ export default function Roadmap() {
       setPlan(result);
       setInsights(result.ai_feedback ? [result.ai_feedback] : []);
     } catch (err) {
-      setError('Unable to generate roadmap. Please complete onboarding survey first.');
+      setError('Unable to generate roadmap. Please complete onboarding survey first.' 
+        + err);
     } finally {
       setLoading(false);
     }
